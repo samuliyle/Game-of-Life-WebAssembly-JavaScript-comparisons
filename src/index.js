@@ -1,7 +1,7 @@
 import './style.css';
 
-const canvas = document.getElementById("myCanvas");
-const canvasContext = canvas.getContext("2d");
+const canvas = document.getElementById('myCanvas');
+const canvasContext = canvas.getContext('2d');
 
 const canvasWidth = 640;
 const canvasHeight = 320;
@@ -25,32 +25,33 @@ for (let i = 0; i < gridCountX; i++) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    canvas.addEventListener("click", (event) => {
-        if (generation === 0) {
-            // Calculate grid coordinates from clicked x, y coordinates
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            const gridX = Math.floor(x / gridWidth);
-            const gridY = Math.floor(y / gridHeight);
-            console.log({ gridX, gridY });
-            addOrRemoveLife(gridX, gridY);
-            
+function clearGridRect(x, y) {
+    canvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+}
+
+function drawGridRect(x, y) {
+    canvasContext.beginPath();
+    canvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    canvasContext.fillStyle = 'black';
+    canvasContext.fill();
+    canvasContext.closePath();
+}
+
+export function drawLife(state) {
+    for (let y = 0; y < state.length; y++) {
+        for (let x = 0; x < state[y].length; x++) {
+            // TODO: Is this necessary each time?
+            clearGridRect(x, y);
+            if (state[y][x] === 1) {
+                drawGridRect(x, y);
+            }
+            canvasContext.font = fontSize;
+            canvasContext.fillStyle = 'red';
+            canvasContext.textAlign = 'center';
+            canvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
         }
-    });
-    
-    drawGrid();
-    drawLife(board);
-
-    const nextButton = document.getElementById("nextButton");
-    nextButton.addEventListener("click", () => {
-        draw();
-    });
-});
-
+    }
+}
 
 // Main loop
 export function draw() {
@@ -67,32 +68,32 @@ export function draw() {
                 // |0|x|0|
                 // |0|0|0|
                 if (x !== 0 && board[y - 1][x - 1] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
                 // |0|1|0|
                 // |0|x|0|
                 // |0|0|0|
                 if (board[y - 1][x] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
                 // |0|0|1|
                 // |0|x|0|
                 // |0|0|0|
                 if (x + 1 !== board[y].length && board[y - 1][x + 1] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
             }
             // |0|0|0|
             // |1|x|0|
             // |0|0|0|
             if (x !== 0 && board[y][x - 1] === 1) {
-                neighbourCount++;
+                neighbourCount += 1;
             }
             // |0|0|0|
             // |0|x|1|
             // |0|0|0|
             if (x + 1 !== board[y].length && board[y][x + 1] === 1) {
-                neighbourCount++;
+                neighbourCount += 1;
             }
 
             // Bottom row
@@ -101,19 +102,19 @@ export function draw() {
                 // |0|x|0|
                 // |1|0|0|
                 if (x !== 0 && board[y + 1][x - 1] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
                 // |0|0|0|
                 // |0|x|0|
                 // |0|1|0|
                 if (board[y + 1][x] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
                 // |0|0|0|
                 // |0|x|0|
                 // |0|0|1|
                 if (x + 1 !== board[y].length && board[y + 1][x + 1] === 1) {
-                    neighbourCount++;
+                    neighbourCount += 1;
                 }
             }
             const current = board[y][x];
@@ -129,35 +130,7 @@ export function draw() {
     }
     drawLife(nextGeneration);
     board = nextGeneration;
-    generation++;
-}
-
-export function drawLife(state) {
-    for (let y = 0; y < state.length; y++) {
-        for (let x = 0; x < state[y].length; x++) {
-            // TODO: Is this necessary each time?
-            clearGridRect(x, y);
-            if (state[y][x] === 1) {
-                drawGridRect(x, y);
-            }
-            canvasContext.font = fontSize;
-            canvasContext.fillStyle = "red";
-            canvasContext.textAlign = "center";
-            canvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
-        }
-    }
-}
-
-function clearGridRect(x, y) {
-    canvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
-}
-
-function drawGridRect(x, y) {
-    canvasContext.beginPath();
-    canvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
-    canvasContext.fillStyle = "black";
-    canvasContext.fill();
-    canvasContext.closePath();
+    generation += 1;
 }
 
 function addOrRemoveLife(x, y) {
@@ -171,7 +144,7 @@ function addOrRemoveLife(x, y) {
 }
 
 function drawGrid() {
-    canvasContext.fillStyle = "grey";
+    canvasContext.fillStyle = 'grey';
     for (let i = 1; i < gridCountX; i++) {
         canvasContext.beginPath();
         canvasContext.rect(0, i * gridHeight, canvasWidth, 1);
@@ -186,4 +159,26 @@ function drawGrid() {
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    canvas.addEventListener('click', (event) => {
+        if (generation === 0) {
+            // Calculate grid coordinates from clicked x, y coordinates
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const gridX = Math.floor(x / gridWidth);
+            const gridY = Math.floor(y / gridHeight);
+            console.log({ gridX, gridY });
+            addOrRemoveLife(gridX, gridY);
+        }
+    });
+    drawGrid();
+    drawLife(board);
 
+    const nextButton = document.getElementById('nextButton');
+    nextButton.addEventListener('click', () => {
+        draw();
+    });
+});
