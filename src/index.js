@@ -1,20 +1,23 @@
 import './style.css';
 
-const canvasWidth = 960;
-const canvasHeight = 640;
+const canvas = document.getElementById("myCanvas");
+const canvasContext = canvas.getContext("2d");
 
-const gridWidth = 20;
-const gridHeight = 20;
+const canvasWidth = 640;
+const canvasHeight = 320;
+
+const gridWidth = 40;
+const gridHeight = 40;
 
 const fontSize = `${Math.floor(gridHeight / 3)}px Arial`;
 
 const gridCountX = canvasHeight / gridHeight;
 const gridCountY = canvasWidth / gridWidth;
 
-let board = [];
-
 let generation = 0;
 
+let board = [];
+// Initialise board
 for (let i = 0; i < gridCountX; i++) {
     board[i] = [];
     for (let j = 0; j < gridCountY; j++) {
@@ -22,23 +25,35 @@ for (let i = 0; i < gridCountX; i++) {
     }
 }
 
-board[3][5] = 1;
-board[4][5] = 1;
-board[5][5] = 1;
-board[6][5] = 1;
-board[7][5] = 1;
+document.addEventListener("DOMContentLoaded", () => {
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    canvas.addEventListener("click", (event) => {
+        if (generation === 0) {
+            // Calculate grid coordinates from clicked x, y coordinates
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const gridX = Math.floor(x / gridWidth);
+            const gridY = Math.floor(y / gridHeight);
+            console.log({ gridX, gridY });
+            addOrRemoveLife(gridX, gridY);
+            
+        }
+    });
+    
+    drawGrid();
+    drawLife(board);
 
-board[3][7] = 1;
-board[7][7] = 1;
+    const nextButton = document.getElementById("nextButton");
+    nextButton.addEventListener("click", () => {
+        draw();
+    });
+});
 
-board[3][9] = 1;
-board[4][9] = 1;
-board[5][9] = 1;
-board[6][9] = 1;
-board[7][9] = 1;
 
 // Main loop
-export function draw(canvasContext) {
+export function draw() {
     // Draw life
     console.log(board);
     const nextGeneration = [];
@@ -112,21 +127,18 @@ export function draw(canvasContext) {
             }
         }
     }
-    drawLife(nextGeneration, canvasContext);
+    drawLife(nextGeneration);
     board = nextGeneration;
     generation++;
 }
 
-export function drawLife(state, canvasContext) {
+export function drawLife(state) {
     for (let y = 0; y < state.length; y++) {
         for (let x = 0; x < state[y].length; x++) {
-            canvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+            // TODO: Is this necessary each time?
+            clearGridRect(x, y);
             if (state[y][x] === 1) {
-                canvasContext.beginPath();
-                canvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
-                canvasContext.fillStyle = "black";
-                canvasContext.fill();
-                canvasContext.closePath();
+                drawGridRect(x, y);
             }
             canvasContext.font = fontSize;
             canvasContext.fillStyle = "red";
@@ -136,29 +148,42 @@ export function drawLife(state, canvasContext) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const canvas = document.getElementById("myCanvas");
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const button = document.getElementById("nextButton");
-    const canvasContext = canvas.getContext("2d");
+function clearGridRect(x, y) {
+    canvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+}
+
+function drawGridRect(x, y) {
+    canvasContext.beginPath();
+    canvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    canvasContext.fillStyle = "black";
+    canvasContext.fill();
+    canvasContext.closePath();
+}
+
+function addOrRemoveLife(x, y) {
+    if (board[y][x] === 0) {
+        board[y][x] = 1;
+        drawGridRect(x, y);
+    } else {
+        board[y][x] = 0;
+        clearGridRect(x, y);
+    }
+}
+
+function drawGrid() {
+    canvasContext.fillStyle = "grey";
     for (let i = 1; i < gridCountX; i++) {
         canvasContext.beginPath();
         canvasContext.rect(0, i * gridHeight, canvasWidth, 1);
-        canvasContext.fillStyle = "grey";
         canvasContext.fill();
         canvasContext.closePath();
     }
     for (let i = 1; i < gridCountY; i++) {
         canvasContext.beginPath();
         canvasContext.rect(i * gridWidth, 0, 1, canvasHeight);
-        canvasContext.fillStyle = "grey";
         canvasContext.fill();
         canvasContext.closePath();
     }
-    drawLife(board, canvasContext);
-    button.addEventListener("click", () => {
-        draw(canvasContext);
-    });
-});
+}
+
 
