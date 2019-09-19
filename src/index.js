@@ -36,6 +36,18 @@ function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
 }
 
+// TODO: Disable if generation iteration started
+function clearBoard() {
+    generation = 0;
+    for (let y = 0; y < board.length; y++) {
+        for (let x = 0; x < board[y].length; x++) {
+            if (board[y][x] === 1) {
+                clearGridRect(x, y);
+            }
+        }
+    }
+}
+
 function drawGridRect(x, y) {
     gameCanvasContext.beginPath();
     gameCanvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -212,5 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextButton = document.getElementById('nextButton');
     nextButton.addEventListener('click', () => {
         draw();
+    });
+
+    const clearButton = document.getElementById('clearButton');
+    clearButton.addEventListener('click', () => {
+        clearBoard();
     });
 });
