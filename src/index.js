@@ -1,7 +1,14 @@
 import './style.css';
 
-const canvas = document.getElementById('myCanvas');
-const canvasContext = canvas.getContext('2d');
+const stageContainer = document.getElementById('stage');
+const backgroundCanvas = document.getElementById('backgroundCanvas');
+const gameCanvas = document.getElementById('gameCanvas');
+const debugCanvas = document.getElementById('debugCanvas');
+const interactionCanvas = document.getElementById('interactionCanvas');
+
+const backgroundCanvasContext = backgroundCanvas.getContext('2d');
+const debugCanvasContext = debugCanvas.getContext('2d');
+const gameCanvasContext = gameCanvas.getContext('2d');
 
 const canvasWidth = 640;
 const canvasHeight = 320;
@@ -26,15 +33,26 @@ for (let i = 0; i < gridCountX; i++) {
 }
 
 function clearGridRect(x, y) {
-    canvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
 }
 
 function drawGridRect(x, y) {
-    canvasContext.beginPath();
-    canvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
-    canvasContext.fillStyle = 'black';
-    canvasContext.fill();
-    canvasContext.closePath();
+    gameCanvasContext.beginPath();
+    gameCanvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    gameCanvasContext.fill();
+    gameCanvasContext.closePath();
+}
+
+function fillDebugCoordinates(x, y) {
+    debugCanvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
+}
+
+function drawDebugCoordinates() {
+    for (let y = 0; y < board.length; y++) {
+        for (let x = 0; x < board[y].length; x++) {
+            fillDebugCoordinates(x, y);
+        }
+    }
 }
 
 export function drawLife(state) {
@@ -45,10 +63,6 @@ export function drawLife(state) {
             if (state[y][x] === 1) {
                 drawGridRect(x, y);
             }
-            canvasContext.font = fontSize;
-            canvasContext.fillStyle = 'red';
-            canvasContext.textAlign = 'center';
-            canvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
         }
     }
 }
@@ -144,28 +158,44 @@ function addOrRemoveLife(x, y) {
 }
 
 function drawGrid() {
-    canvasContext.fillStyle = 'grey';
     for (let i = 1; i < gridCountX; i++) {
-        canvasContext.beginPath();
-        canvasContext.rect(0, i * gridHeight, canvasWidth, 1);
-        canvasContext.fill();
-        canvasContext.closePath();
+        backgroundCanvasContext.beginPath();
+        backgroundCanvasContext.rect(0, i * gridHeight, canvasWidth, 1);
+        backgroundCanvasContext.fill();
+        backgroundCanvasContext.closePath();
     }
     for (let i = 1; i < gridCountY; i++) {
-        canvasContext.beginPath();
-        canvasContext.rect(i * gridWidth, 0, 1, canvasHeight);
-        canvasContext.fill();
-        canvasContext.closePath();
+        backgroundCanvasContext.beginPath();
+        backgroundCanvasContext.rect(i * gridWidth, 0, 1, canvasHeight);
+        backgroundCanvasContext.fill();
+        backgroundCanvasContext.closePath();
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    canvas.addEventListener('click', (event) => {
+    stageContainer.style.width = `${canvasWidth}px`;
+    stageContainer.style.height = `${canvasHeight}px`;
+    backgroundCanvas.width = canvasWidth;
+    backgroundCanvas.height = canvasHeight;
+    backgroundCanvasContext.fillStyle = 'grey';
+
+    debugCanvas.width = canvasWidth;
+    debugCanvas.height = canvasHeight;
+    debugCanvasContext.font = fontSize;
+    debugCanvasContext.fillStyle = 'red';
+    debugCanvasContext.textAlign = 'center';
+
+    gameCanvas.width = canvasWidth;
+    gameCanvas.height = canvasHeight;
+    gameCanvasContext.fillStyle = 'black';
+
+    interactionCanvas.width = canvasWidth;
+    interactionCanvas.height = canvasHeight;
+
+    interactionCanvas.addEventListener('click', (event) => {
         if (generation === 0) {
             // Calculate grid coordinates from clicked x, y coordinates
-            const rect = canvas.getBoundingClientRect();
+            const rect = interactionCanvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
             const gridX = Math.floor(x / gridWidth);
@@ -174,7 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
             addOrRemoveLife(gridX, gridY);
         }
     });
+
     drawGrid();
+    drawDebugCoordinates();
     drawLife(board);
 
     const nextButton = document.getElementById('nextButton');

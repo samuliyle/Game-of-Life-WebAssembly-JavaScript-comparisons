@@ -4,7 +4,27 @@
 }
 
 canvas {
-    background: #eee;
-    display: block;
-    margin: 0 auto;
+    position: absolute;
+}
+
+#stage {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#backgroundCanvas {
+    z-index: 0;
+}
+
+#gameCanvas {
+    z-index: 1;
+}
+
+#debugCanvas {
+    z-index: 2;
+}
+
+#interactionCanvas {
+    z-index: 3;
 }
