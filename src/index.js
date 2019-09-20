@@ -29,14 +29,8 @@ const step = 1000;
 let animationRequestId;
 let generation = 0;
 
-let board = [];
+let board = new Array(gridCountX).fill(new Array(gridCountY).fill(0));
 // Initialise board
-for (let i = 0; i < gridCountX; i++) {
-    board[i] = [];
-    for (let j = 0; j < gridCountY; j++) {
-        board[i][j] = 0;
-    }
-}
 
 function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -70,14 +64,10 @@ function updateGeneration(currentGeneration) {
 function clearBoard() {
     generation = 0;
     updateGeneration(generation);
-    for (let y = 0; y < board.length; y++) {
-        for (let x = 0; x < board[y].length; x++) {
-            if (board[y][x] === 1) {
-                board[y][x] = 0;
-                clearGridRect(x, y);
-            }
-        }
-    }
+    gameCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+    board.forEach((element) => {
+        element.fill(0);
+    });
 }
 
 function drawDebugCoordinates() {
