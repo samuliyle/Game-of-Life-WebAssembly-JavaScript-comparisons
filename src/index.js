@@ -14,13 +14,11 @@ const gameCanvasContext = gameCanvas.getContext('2d');
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
-const gridWidth = 40;
-const gridHeight = 40;
+let gridWidth = 40;
+let gridHeight = 40;
 
-const fontSize = `${Math.floor(gridHeight / 3)}px Arial`;
-
-const gridCountX = canvasHeight / gridHeight;
-const gridCountY = canvasWidth / gridWidth;
+let gridCountX = canvasHeight / gridHeight;
+let gridCountY = canvasWidth / gridWidth;
 
 let last = null;
 let lastFrame = null;
@@ -76,7 +74,12 @@ function clearBoard() {
     });
 }
 
+function clearDebugCoordinates() {
+    debugCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+}
+
 function drawDebugCoordinates() {
+    debugCanvasContext.font = `${Math.floor(gridHeight / 3)}px Arial`;
     for (let y = 0; y < board.length; y++) {
         for (let x = 0; x < board[y].length; x++) {
             fillDebugCoordinates(x, y);
@@ -84,7 +87,11 @@ function drawDebugCoordinates() {
     }
 }
 
-export function drawLife(state) {
+function clearLife() {
+    gameCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+}
+
+export function drawLife(state = board) {
     for (let y = 0; y < state.length; y++) {
         for (let x = 0; x < state[y].length; x++) {
             // TODO: Is this necessary each time?
@@ -214,6 +221,10 @@ function addOrRemoveLife(x, y) {
     }
 }
 
+function clearGrid() {
+    backgroundCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+}
+
 function drawGrid() {
     for (let i = 1; i < gridCountX; i++) {
         backgroundCanvasContext.beginPath();
@@ -229,11 +240,21 @@ function drawGrid() {
     }
 }
 
+function clearAll() {
+    clearGrid();
+    clearLife();
+    clearDebugCoordinates();
+}
+
+function drawAll() {
+    drawGrid();
+    drawLife();
+    drawDebugCoordinates();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     backgroundCanvasContext.fillStyle = 'grey';
 
-    debugCanvasContext.font = fontSize;
     debugCanvasContext.fillStyle = 'red';
     debugCanvasContext.textAlign = 'center';
 
@@ -257,6 +278,29 @@ document.addEventListener('DOMContentLoaded', () => {
         step = event.target.value;
     });
 
+    const gridSizeSlider = document.getElementById('gridSizeSlider');
+    gridSizeSlider.addEventListener('input', (event) => {
+        gridWidth = event.target.value;
+        gridHeight = event.target.value;
+        gridCountX = canvasHeight / gridHeight;
+        gridCountY = canvasWidth / gridWidth;
+        clearAll();
+        const newBoard = [];
+        // TODO: Improve
+        for (let i = 0; i < gridCountX; i++) {
+            newBoard[i] = [];
+            for (let j = 0; j < gridCountY; j++) {
+                if (board[i] !== undefined && board[i][j] !== undefined) {
+                    newBoard[i][j] = board[i][j];
+                } else {
+                    newBoard[i][j] = 0;
+                }
+            }
+        }
+        board = newBoard;
+        drawAll();
+    });
+
     const nextButton = document.getElementById('nextButton');
     nextButton.addEventListener('click', () => {
         draw();
@@ -278,7 +322,5 @@ document.addEventListener('DOMContentLoaded', () => {
         clearBoard();
     });
 
-    drawGrid();
-    drawDebugCoordinates();
-    drawLife(board);
+    drawAll();
 });
