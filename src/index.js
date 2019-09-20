@@ -4,6 +4,7 @@ const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
 const interactionCanvas = document.getElementById('interactionCanvas');
+const fpsElement = document.getElementById('fps');
 
 const backgroundCanvasContext = backgroundCanvas.getContext('2d');
 const debugCanvasContext = debugCanvas.getContext('2d');
@@ -12,8 +13,8 @@ const gameCanvasContext = gameCanvas.getContext('2d');
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
-const gridWidth = 2;
-const gridHeight = 2;
+const gridWidth = 40;
+const gridHeight = 40;
 
 const fontSize = `${Math.floor(gridHeight / 3)}px Arial`;
 
@@ -64,6 +65,15 @@ function fillDebugCoordinates(x, y) {
     debugCanvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
 }
 
+function roundToPrecision(x) {
+    // eslint-disable-next-line prefer-template
+    return +(Math.round(x + 'e+2') + 'e-2');
+}
+
+function drawFps(fps) {
+    fpsElement.textContent = roundToPrecision(fps);
+}
+
 function drawDebugCoordinates() {
     for (let y = 0; y < board.length; y++) {
         for (let x = 0; x < board[y].length; x++) {
@@ -109,7 +119,6 @@ export function draw(time) {
     }
     const progress = time - last;
     // FPS
-    console.log(1000 / (time - lastFrame));
     if (progress > step) {
         nextGeneration = [];
         for (let y = 0; y < board.length; y++) {
@@ -182,6 +191,7 @@ export function draw(time) {
                 }
             }
         }
+        drawFps(1000 / (time - lastFrame));
         last = time;
         board = nextGeneration;
         generation += 1;
