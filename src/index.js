@@ -24,13 +24,19 @@ const gridCountY = canvasWidth / gridWidth;
 
 let last = null;
 let lastFrame = null;
-const step = 1000;
+let step = 1000;
 
 let animationRequestId;
 let generation = 0;
 
-let board = new Array(gridCountX).fill(new Array(gridCountY).fill(0));
 // Initialise board
+let board = [];
+for (let i = 0; i < gridCountX; i++) {
+    board[i] = [];
+    for (let j = 0; j < gridCountY; j++) {
+        board[i][j] = 0;
+    }
+}
 
 function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -244,6 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log({ gridX, gridY });
             addOrRemoveLife(gridX, gridY);
         }
+    });
+
+    const iterationSlider = document.getElementById('iterationIntervalSlider');
+    iterationSlider.addEventListener('input', (event) => {
+        step = event.target.value;
     });
 
     const nextButton = document.getElementById('nextButton');
