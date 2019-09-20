@@ -5,6 +5,7 @@ const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
 const interactionCanvas = document.getElementById('interactionCanvas');
 const fpsElement = document.getElementById('fps');
+const generationElement = document.getElementById('generation');
 
 const backgroundCanvasContext = backgroundCanvas.getContext('2d');
 const debugCanvasContext = debugCanvas.getContext('2d');
@@ -41,19 +42,6 @@ function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
 }
 
-// TODO: Disable if generation iteration started
-function clearBoard() {
-    generation = 0;
-    for (let y = 0; y < board.length; y++) {
-        for (let x = 0; x < board[y].length; x++) {
-            if (board[y][x] === 1) {
-                board[y][x] = 0;
-                clearGridRect(x, y);
-            }
-        }
-    }
-}
-
 function drawGridRect(x, y) {
     gameCanvasContext.beginPath();
     gameCanvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -70,8 +58,26 @@ function roundToPrecision(x) {
     return +(Math.round(x + 'e+2') + 'e-2');
 }
 
-function drawFps(fps) {
+function updateFps(fps) {
     fpsElement.textContent = roundToPrecision(fps);
+}
+
+function updateGeneration(currentGeneration) {
+    generationElement.textContent = currentGeneration;
+}
+
+// TODO: Disable if generation iteration started
+function clearBoard() {
+    generation = 0;
+    updateGeneration(generation);
+    for (let y = 0; y < board.length; y++) {
+        for (let x = 0; x < board[y].length; x++) {
+            if (board[y][x] === 1) {
+                board[y][x] = 0;
+                clearGridRect(x, y);
+            }
+        }
+    }
 }
 
 function drawDebugCoordinates() {
@@ -191,10 +197,11 @@ export function draw(time) {
                 }
             }
         }
-        drawFps(1000 / (time - lastFrame));
+        updateFps(1000 / (time - lastFrame));
         last = time;
         board = nextGeneration;
         generation += 1;
+        updateGeneration(generation);
     }
     lastFrame = time;
     drawLife(nextGeneration || board);
