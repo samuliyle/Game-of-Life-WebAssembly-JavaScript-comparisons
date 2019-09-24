@@ -8,19 +8,24 @@
 
 <body>
     <div id="stage">
-        <canvas width="640" height="320" id="backgroundCanvas"></canvas>
-        <canvas width="640" height="320" id="gameCanvas"></canvas>
-        <canvas width="640" height="320" id="debugCanvas"></canvas>
-        <canvas width="640" height="320" id="interactionCanvas"></canvas>
+        <canvas width="960" height="640" id="backgroundCanvas"></canvas>
+        <canvas width="960" height="640" id="gameCanvas"></canvas>
+        <canvas width="960" height="640" id="debugCanvas"></canvas>
+        <canvas width="960" height="640" id="interactionCanvas"></canvas>
     </div>
     <div id="buttonContainer">
         <span>FPS: </span><span id="fps">0</span>
+        <select id="premadeBoardSelect">
+            <option value="">Select premade board</option>
+            <option value="performanceTest1">Performance</option>
+        </select>
         <button id="nextButton">Next</button>
         <button id="startStopButton">Start</button>
         <button id="clearButton">Clear</button>
-        <span>Speed: </span><input type="range" min="100" step="100" max="5000" value="1000" id="iterationIntervalSlider">
+        <span>Speed: </span><input type="range" min="100" step="100" max="5000" value="1000"
+            id="iterationIntervalSlider">
         <span>Generation: </span><span id="generation">0</span>
-        <span>Grid: </span><input type="range" min="10" max="50" step="10" value="40" id="gridSizeSlider">
+        <span>Grid: </span><input type="range" min="5" max="50" step="5" value="40" id="gridSizeSlider">
     </div>
 </body>
 

@@ -1,5 +1,7 @@
 import './style.css';
 
+import premadeBoards from './premadeboards';
+
 const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
@@ -29,12 +31,19 @@ let generation = 0;
 
 // Initialise board
 let board = [];
-for (let i = 0; i < gridCountX; i++) {
-    board[i] = [];
-    for (let j = 0; j < gridCountY; j++) {
-        board[i][j] = 0;
+
+function createEmptyBoard() {
+    const emptyBoard = [];
+    for (let i = 0; i < gridCountX; i++) {
+        emptyBoard[i] = [];
+        for (let j = 0; j < gridCountY; j++) {
+            emptyBoard[i][j] = 0;
+        }
     }
+    return emptyBoard;
 }
+
+board = createEmptyBoard();
 
 function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -252,6 +261,30 @@ function drawAll() {
     drawDebugCoordinates();
 }
 
+function gridSizeChange(value, keepBoard = true) {
+    gridWidth = value;
+    gridHeight = value;
+    gridCountX = canvasHeight / gridHeight;
+    gridCountY = canvasWidth / gridWidth;
+    clearAll();
+    if (keepBoard) {
+        const newBoard = [];
+        for (let i = 0; i < gridCountX; i++) {
+            newBoard[i] = [];
+            for (let j = 0; j < gridCountY; j++) {
+                // TODO: Improve
+                if (board[i] !== undefined && board[i][j] !== undefined) {
+                    newBoard[i][j] = board[i][j];
+                } else {
+                    newBoard[i][j] = 0;
+                }
+            }
+        }
+        board = newBoard;
+    }
+    drawAll();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     backgroundCanvasContext.fillStyle = 'grey';
 
@@ -280,25 +313,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gridSizeSlider = document.getElementById('gridSizeSlider');
     gridSizeSlider.addEventListener('input', (event) => {
-        gridWidth = event.target.value;
-        gridHeight = event.target.value;
-        gridCountX = canvasHeight / gridHeight;
-        gridCountY = canvasWidth / gridWidth;
-        clearAll();
-        const newBoard = [];
-        // TODO: Improve
-        for (let i = 0; i < gridCountX; i++) {
-            newBoard[i] = [];
-            for (let j = 0; j < gridCountY; j++) {
-                if (board[i] !== undefined && board[i][j] !== undefined) {
-                    newBoard[i][j] = board[i][j];
-                } else {
-                    newBoard[i][j] = 0;
-                }
+        gridSizeChange(event.target.value);
+    });
+    const premadeBoardSelect = document.getElementById('premadeBoardSelect');
+    premadeBoardSelect.addEventListener('change', (event) => {
+        if (event.target.value.length !== 0) {
+            const premadeBoard = premadeBoards[event.target.value];
+            if (premadeBoard) {
+                gridSizeSlider.value = premadeBoard.gridSize;
+                iterationSlider.value = premadeBoard.speed;
+                step = premadeBoard.speed;
+                board = premadeBoard.board;
+                gridSizeChange(premadeBoard.gridSize, false);
             }
         }
-        board = newBoard;
-        drawAll();
     });
 
     const nextButton = document.getElementById('nextButton');
