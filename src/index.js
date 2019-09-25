@@ -102,10 +102,9 @@ function clearLife() {
 }
 
 export function drawLife(state = board) {
+    clearLife();
     for (let y = 0; y < state.length; y++) {
         for (let x = 0; x < state[y].length; x++) {
-            // TODO: Is this necessary each time?
-            clearGridRect(x, y);
             if (state[y][x] === 1) {
                 drawGridRect(x, y);
             }
