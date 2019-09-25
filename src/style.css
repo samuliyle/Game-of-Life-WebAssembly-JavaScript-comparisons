@@ -14,12 +14,12 @@ canvas {
 }
 
 #stage, canvas {
-    width: 960px;
-    height: 640px;
+    width: 1440px;
+    height: 960px;
 }
 
 #buttonContainer {
-    width: 960px;
+    width: 1440px;
     margin: 0 auto;
     display: flex;
     flex-direction: row;

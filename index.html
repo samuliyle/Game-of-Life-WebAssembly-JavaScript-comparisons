@@ -8,10 +8,10 @@
 
 <body>
     <div id="stage">
-        <canvas width="960" height="640" id="backgroundCanvas"></canvas>
-        <canvas width="960" height="640" id="gameCanvas"></canvas>
-        <canvas width="960" height="640" id="debugCanvas"></canvas>
-        <canvas width="960" height="640" id="interactionCanvas"></canvas>
+        <canvas width="1440" height="960" id="backgroundCanvas"></canvas>
+        <canvas width="1440" height="960" id="gameCanvas"></canvas>
+        <canvas width="1440" height="960" id="debugCanvas"></canvas>
+        <canvas width="1440" height="960" id="interactionCanvas"></canvas>
     </div>
     <div id="buttonContainer">
         <span>FPS: </span><span id="fps">0</span>
@@ -19,6 +19,8 @@
             <option value="">Select premade board</option>
             <option value="performanceTest1">Performance</option>
         </select>
+        <input type="checkbox" id="debugCoordinates" name="debugCoordinates" checked value="debugCoordinates">
+        <label for="debugCoordinates">Debug coordinates</label>
         <button id="nextButton">Next</button>
         <button id="startStopButton">Start</button>
         <button id="clearButton">Clear</button>

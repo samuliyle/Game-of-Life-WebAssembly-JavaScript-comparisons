@@ -16,6 +16,7 @@ const gameCanvasContext = gameCanvas.getContext('2d');
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
+let enableDebugCoordinates = true;
 let gridWidth = 40;
 let gridHeight = 40;
 
@@ -136,7 +137,6 @@ export function draw(time) {
         lastFrame = time;
     }
     const progress = time - last;
-    // FPS
     if (progress > step) {
         nextGeneration = [];
         for (let y = 0; y < board.length; y++) {
@@ -252,13 +252,17 @@ function drawGrid() {
 function clearAll() {
     clearGrid();
     clearLife();
-    clearDebugCoordinates();
+    if (enableDebugCoordinates) {
+        clearDebugCoordinates();
+    }
 }
 
 function drawAll() {
     drawGrid();
     drawLife();
-    drawDebugCoordinates();
+    if (enableDebugCoordinates) {
+        drawDebugCoordinates();
+    }
 }
 
 function gridSizeChange(value, keepBoard = true) {
@@ -269,6 +273,7 @@ function gridSizeChange(value, keepBoard = true) {
     clearAll();
     if (keepBoard) {
         const newBoard = [];
+        // Expand current board
         for (let i = 0; i < gridCountX; i++) {
             newBoard[i] = [];
             for (let j = 0; j < gridCountY; j++) {
@@ -301,8 +306,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = event.clientY - rect.top;
             const gridX = Math.floor(x / gridWidth);
             const gridY = Math.floor(y / gridHeight);
-            console.log({ gridX, gridY });
-            addOrRemoveLife(gridX, gridY);
+            if (event.shiftKey) {
+                const selectedRow = board[gridY];
+                for (let i = 0; i < selectedRow.length; i++) {
+                    addOrRemoveLife(i, gridY);
+                }
+            } else {
+                addOrRemoveLife(gridX, gridY);
+            }
+        }
+    });
+
+    const debugCoordinatesCheckbox = document.getElementById('debugCoordinates');
+    debugCoordinatesCheckbox.addEventListener('change', (event) => {
+        enableDebugCoordinates = event.target.checked;
+        if (enableDebugCoordinates) {
+            drawDebugCoordinates();
+        } else {
+            clearDebugCoordinates();
         }
     });
 
