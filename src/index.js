@@ -6,7 +6,13 @@ const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
 const interactionCanvas = document.getElementById('interactionCanvas');
+
+const iterationSlider = document.getElementById('iterationIntervalSlider');
+const gridSizeSlider = document.getElementById('gridSizeSlider');
+
 const fpsElement = document.getElementById('fps');
+const speedElement = document.getElementById('speed');
+const gridElement = document.getElementById('grid');
 const generationElement = document.getElementById('generation');
 
 const backgroundCanvasContext = backgroundCanvas.getContext('2d');
@@ -17,21 +23,21 @@ const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
 let enableDebugCoordinates = true;
-let gridWidth = 40;
-let gridHeight = 40;
+
+let gridWidth = gridSizeSlider.value;
+let gridHeight = gridSizeSlider.value;
+gridElement.textContent = gridSizeSlider.value;
+let step = iterationSlider.value;
+speedElement.textContent = step;
 
 let gridCountX = canvasHeight / gridHeight;
 let gridCountY = canvasWidth / gridWidth;
 
 let last = null;
 let lastFrame = null;
-let step = 1000;
 
 let animationRequestId;
 let generation = 0;
-
-// Initialise board
-let board = [];
 
 function createEmptyBoard() {
     const emptyBoard = [];
@@ -44,6 +50,8 @@ function createEmptyBoard() {
     return emptyBoard;
 }
 
+// Initialise board
+let board = [];
 board = createEmptyBoard();
 
 function clearGridRect(x, y) {
@@ -72,16 +80,6 @@ function updateFps(fps) {
 
 function updateGeneration(currentGeneration) {
     generationElement.textContent = currentGeneration;
-}
-
-// TODO: Disable if generation iteration started
-function clearBoard() {
-    generation = 0;
-    updateGeneration(generation);
-    gameCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-    board.forEach((element) => {
-        element.fill(0);
-    });
 }
 
 function clearDebugCoordinates() {
@@ -124,6 +122,16 @@ function stop() {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
     }
+}
+
+function clearBoard() {
+    stop();
+    generation = 0;
+    updateGeneration(generation);
+    clearLife();
+    board.forEach((element) => {
+        element.fill(0);
+    });
 }
 
 // Main loop
@@ -317,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const debugCoordinatesCheckbox = document.getElementById('debugCoordinates');
+    enableDebugCoordinates = debugCoordinatesCheckbox.checked;
     debugCoordinatesCheckbox.addEventListener('change', (event) => {
         enableDebugCoordinates = event.target.checked;
         if (enableDebugCoordinates) {
@@ -326,14 +335,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    const iterationSlider = document.getElementById('iterationIntervalSlider');
     iterationSlider.addEventListener('input', (event) => {
         step = event.target.value;
+        speedElement.textContent = step;
     });
 
-    const gridSizeSlider = document.getElementById('gridSizeSlider');
     gridSizeSlider.addEventListener('input', (event) => {
         gridSizeChange(event.target.value);
+        gridElement.textContent = event.target.value;
     });
     const premadeBoardSelect = document.getElementById('premadeBoardSelect');
     premadeBoardSelect.addEventListener('change', (event) => {
