@@ -30,8 +30,8 @@ gridElement.textContent = gridSizeSlider.value;
 let step = iterationSlider.value;
 speedElement.textContent = step;
 
-let gridCountX = canvasHeight / gridHeight;
-let gridCountY = canvasWidth / gridWidth;
+let gridCountX = Math.round(canvasHeight / gridHeight);
+let gridCountY = Math.round(canvasWidth / gridWidth);
 
 let last = null;
 let lastFrame = null;
@@ -53,6 +53,12 @@ function createEmptyBoard() {
 // Initialise board
 let board = [];
 board = createEmptyBoard();
+
+function getElementAt(x, y) {
+    /* eslint-disable */
+    return board[(x % gridCountX + gridCountX) % gridCountX][(y % gridCountY + gridCountY) % gridCountY];
+    /* eslint-enable */
+}
 
 function clearGridRect(x, y) {
     gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
@@ -150,61 +156,69 @@ export function draw(time) {
             nextGeneration[y] = [];
             for (let x = 0; x < board[y].length; x++) {
                 let neighbourCount = 0;
-                // Upper row
-                if (y !== 0) {
-                    // |1|0|0|
-                    // |0|x|0|
-                    // |0|0|0|
-                    if (x !== 0 && board[y - 1][x - 1] === 1) {
-                        neighbourCount += 1;
-                    }
-                    // |0|1|0|
-                    // |0|x|0|
-                    // |0|0|0|
-                    if (board[y - 1][x] === 1) {
-                        neighbourCount += 1;
-                    }
-                    // |0|0|1|
-                    // |0|x|0|
-                    // |0|0|0|
-                    if (x + 1 !== board[y].length && board[y - 1][x + 1] === 1) {
-                        neighbourCount += 1;
-                    }
-                }
+                // |1|0|0|
+                // |0|x|0|
+                // |0|0|0|
+                neighbourCount += getElementAt(y - 1, x - 1);
+                // |0|1|0|
+                // |0|x|0|
+                // |0|0|0|
+                neighbourCount += getElementAt(y - 1, x);
+                // |0|0|1|
+                // |0|x|0|
+                // |0|0|0|
+                neighbourCount += getElementAt(y - 1, x + 1);
                 // |0|0|0|
                 // |1|x|0|
                 // |0|0|0|
-                if (x !== 0 && board[y][x - 1] === 1) {
-                    neighbourCount += 1;
-                }
+                neighbourCount += getElementAt(y, x - 1);
                 // |0|0|0|
                 // |0|x|1|
                 // |0|0|0|
-                if (x + 1 !== board[y].length && board[y][x + 1] === 1) {
-                    neighbourCount += 1;
-                }
+                neighbourCount += getElementAt(y, x + 1);
+                // |0|0|0|
+                // |0|x|0|
+                // |1|0|0|
+                neighbourCount += getElementAt(y + 1, x - 1);
+                // |0|0|0|
+                // |0|x|0|
+                // |0|1|0|
+                neighbourCount += getElementAt(y + 1, x);
+                // |0|0|0|
+                // |0|x|0|
+                // |0|0|1|
+                neighbourCount += getElementAt(y + 1, x + 1);
+                // // Upper row
+                // if (y !== 0) {
+                //     if (x !== 0 && board[y - 1][x - 1] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                //     if (board[y - 1][x] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                //     if (x + 1 !== board[y].length && board[y - 1][x + 1] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                // }
+                // if (x !== 0 && board[y][x - 1] === 1) {
+                //     neighbourCount += 1;
+                // }
+                // if (x + 1 !== board[y].length && board[y][x + 1] === 1) {
+                //     neighbourCount += 1;
+                // }
 
-                // Bottom row
-                if (y + 1 !== board.length) {
-                    // |0|0|0|
-                    // |0|x|0|
-                    // |1|0|0|
-                    if (x !== 0 && board[y + 1][x - 1] === 1) {
-                        neighbourCount += 1;
-                    }
-                    // |0|0|0|
-                    // |0|x|0|
-                    // |0|1|0|
-                    if (board[y + 1][x] === 1) {
-                        neighbourCount += 1;
-                    }
-                    // |0|0|0|
-                    // |0|x|0|
-                    // |0|0|1|
-                    if (x + 1 !== board[y].length && board[y + 1][x + 1] === 1) {
-                        neighbourCount += 1;
-                    }
-                }
+                // // Bottom row
+                // if (y + 1 !== board.length) {
+                //     if (x !== 0 && board[y + 1][x - 1] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                //     if (board[y + 1][x] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                //     if (x + 1 !== board[y].length && board[y + 1][x + 1] === 1) {
+                //         neighbourCount += 1;
+                //     }
+                // }
                 const current = board[y][x];
                 if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
                     // console.log(`(${y}, ${x}) died. Neighbours: ${neighbourCount}`);
@@ -275,8 +289,8 @@ function drawAll() {
 function gridSizeChange(value, keepBoard = true) {
     gridWidth = value;
     gridHeight = value;
-    gridCountX = canvasHeight / gridHeight;
-    gridCountY = canvasWidth / gridWidth;
+    gridCountX = Math.round(canvasHeight / gridHeight);
+    gridCountY = Math.round(canvasWidth / gridWidth);
     clearAll();
     if (keepBoard) {
         const newBoard = [];
