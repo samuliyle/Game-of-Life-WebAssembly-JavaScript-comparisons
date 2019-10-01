@@ -2,6 +2,31 @@ import './style.css';
 
 import premadeBoards from './premadeboards';
 
+// eslint-disable-next-line import/extensions
+import adderino from './add.js';
+import addModule from './add.wasm';
+
+// Since webpack will change the name and potentially the path of the
+// `.wasm` file, we have to provide a `locateFile()` hook to redirect
+// to the appropriate URL.
+// More details: https://kripken.github.io/emscripten-site/docs/api_reference/module.html
+// eslint-disable-next-line no-var
+var module = adderino({
+    locateFile(path) {
+        if (path.endsWith('.wasm')) {
+            return addModule;
+        }
+        return path;
+    },
+});
+
+module.onRuntimeInitialized = () => {
+    // eslint-disable-next-line no-underscore-dangle
+    console.log(module._add(10, 11));
+};
+
+console.log(module);
+
 const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');

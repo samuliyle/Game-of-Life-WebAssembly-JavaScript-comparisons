@@ -23,6 +23,9 @@ module.exports = {
         filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist'),
     },
+    node: {
+        fs: 'empty',
+    },
     module: {
         rules: [
             {
@@ -37,11 +40,16 @@ module.exports = {
                     'css-loader',
                 ],
             },
+            // {
+            //     test: /\.(png|svg|jpg|gif)$/,
+            //     use: [
+            //         'file-loader',
+            //     ],
+            // },
             {
-                test: /\.(png|svg|jpg|gif)$/,
-                use: [
-                    'file-loader',
-                ],
+                test: /add\.wasm$/,
+                type: 'javascript/auto',
+                loader: 'file-loader',
             },
         ],
     },
