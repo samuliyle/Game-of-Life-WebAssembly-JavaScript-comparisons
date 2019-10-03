@@ -72,6 +72,37 @@ function createEmptyBoard() {
 }
 
 
+const inArray = new Int32Array(createEmptyBoard().flat());
+const nByte = 4;
+
+// Takes an Int32Array, copies it to the heap and returns a pointer
+function arrayToPtr(array) {
+    const ptr = module._malloc(array.length * nByte);
+    module.HEAP32.set(array, ptr / nByte);
+    return ptr;
+}
+
+// Takes a pointer and  array length, and returns a Int32Array from the heap
+function ptrToArray(ptr, length) {
+    const array = new Int32Array(length);
+    const pos = ptr / nByte;
+    array.set(module.HEAP32.subarray(pos, pos + length));
+    return array;
+}
+
+
+module.onRuntimeInitialized = () => {
+    console.log(module._add(10, 11));
+    const ptr = arrayToPtr(inArray);
+    const result = module._copy_array(ptr, inArray.length);
+    const copiedArray = ptrToArray(result, inArray.length);
+    console.log(inArray);
+    console.log(copiedArray);
+    module._free(inArray);
+    module._free(copiedArray);
+};
+
+
 // Initialise board
 let board = createEmptyBoard();
 if (oneDimensional) {
