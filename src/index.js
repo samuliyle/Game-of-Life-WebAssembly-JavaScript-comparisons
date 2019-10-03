@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import './style.css';
 
 import premadeBoards from './premadeboards';
@@ -20,13 +21,6 @@ var module = adderino({
     },
 });
 
-module.onRuntimeInitialized = () => {
-    // eslint-disable-next-line no-underscore-dangle
-    console.log(module._add(10, 11));
-};
-
-console.log(module);
-
 const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
@@ -47,6 +41,8 @@ const gameCanvasContext = gameCanvas.getContext('2d');
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
+const oneDimensional = false;
+
 let enableDebugCoordinates = true;
 
 let gridWidth = gridSizeSlider.value;
@@ -55,8 +51,8 @@ gridElement.textContent = gridSizeSlider.value;
 let step = iterationSlider.value;
 speedElement.textContent = step;
 
-let gridCountX = Math.round(canvasHeight / gridHeight);
-let gridCountY = Math.round(canvasWidth / gridWidth);
+let gridCountY = Math.round(canvasHeight / gridHeight);
+let gridCountX = Math.round(canvasWidth / gridWidth);
 
 let last = null;
 let lastFrame = null;
@@ -66,22 +62,31 @@ let generation = 0;
 
 function createEmptyBoard() {
     const emptyBoard = [];
-    for (let i = 0; i < gridCountX; i++) {
+    for (let i = 0; i < gridCountY; i++) {
         emptyBoard[i] = [];
-        for (let j = 0; j < gridCountY; j++) {
+        for (let j = 0; j < gridCountX; j++) {
             emptyBoard[i][j] = 0;
         }
     }
     return emptyBoard;
 }
 
+
 // Initialise board
-let board = [];
-board = createEmptyBoard();
+let board = createEmptyBoard();
+if (oneDimensional) {
+    board = board.flat();
+}
+
+function getValue(array, x, y) {
+    /* eslint-disable */
+    return array[(((x) % gridCountX + gridCountX) % gridCountX) + gridCountX * (((y) % gridCountY + gridCountY) % gridCountY)];
+    /* eslint-enable */
+}
 
 function getElementAt(x, y) {
     /* eslint-disable */
-    return board[(x % gridCountX + gridCountX) % gridCountX][(y % gridCountY + gridCountY) % gridCountY];
+    return board[(y % gridCountY + gridCountY) % gridCountY][(x % gridCountX + gridCountX) % gridCountX];
     /* eslint-enable */
 }
 
@@ -119,8 +124,8 @@ function clearDebugCoordinates() {
 
 function drawDebugCoordinates() {
     debugCanvasContext.font = `${Math.floor(gridHeight / 3)}px Arial`;
-    for (let y = 0; y < board.length; y++) {
-        for (let x = 0; x < board[y].length; x++) {
+    for (let y = 0; y < gridCountY; y++) {
+        for (let x = 0; x < gridCountX; x++) {
             fillDebugCoordinates(x, y);
         }
     }
@@ -132,9 +137,14 @@ function clearLife() {
 
 export function drawLife(state = board) {
     clearLife();
-    for (let y = 0; y < state.length; y++) {
-        for (let x = 0; x < state[y].length; x++) {
-            if (state[y][x] === 1) {
+    for (let y = 0; y < gridCountY; y++) {
+        for (let x = 0; x < gridCountX; x++) {
+            if (oneDimensional) {
+                const i = x + gridCountX * y;
+                if (state[i] === 1) {
+                    drawGridRect(x, y);
+                }
+            } else if (state[y][x] === 1) {
                 drawGridRect(x, y);
             }
         }
@@ -160,9 +170,66 @@ function clearBoard() {
     generation = 0;
     updateGeneration(generation);
     clearLife();
-    board.forEach((element) => {
-        element.fill(0);
-    });
+    if (oneDimensional) {
+        board.fill(0);
+    } else {
+        board.forEach((element) => {
+            element.fill(0);
+        });
+    }
+}
+
+function calculateNeighbors(y, x) {
+    let neighbourCount = 0;
+    // |1|0|0|
+    // |0|x|0|
+    // |0|0|0|
+    neighbourCount += getElementAt(x - 1, y - 1);
+    // |0|1|0|
+    // |0|x|0|
+    // |0|0|0|
+    neighbourCount += getElementAt(x, y - 1);
+    // |0|0|1|
+    // |0|x|0|
+    // |0|0|0|
+    neighbourCount += getElementAt(x + 1, y - 1);
+    // |0|0|0|
+    // |1|x|0|
+    // |0|0|0|
+    neighbourCount += getElementAt(x - 1, y);
+    // |0|0|0|
+    // |0|x|1|
+    // |0|0|0|
+    neighbourCount += getElementAt(x + 1, y);
+    // |0|0|0|
+    // |0|x|0|
+    // |1|0|0|
+    neighbourCount += getElementAt(x - 1, y + 1);
+    // |0|0|0|
+    // |0|x|0|
+    // |0|1|0|
+    neighbourCount += getElementAt(x, y + 1);
+    // |0|0|0|
+    // |0|x|0|
+    // |0|0|1|
+    neighbourCount += getElementAt(x + 1, y + 1);
+    return neighbourCount;
+}
+
+function calculate1dNeighbors(i) {
+    const xIndex = i % gridCountX;
+    let neighbourCount = 0;
+    // eslint-disable-next-line no-bitwise
+    const yIndex = ~~(i / gridCountX);
+    neighbourCount += getValue(board, xIndex - 1, yIndex - 1);
+    neighbourCount += getValue(board, xIndex, yIndex - 1);
+    neighbourCount += getValue(board, xIndex + 1, yIndex - 1);
+    neighbourCount += getValue(board, xIndex - 1, yIndex);
+    neighbourCount += getValue(board, xIndex + 1, yIndex);
+    neighbourCount += getValue(board, xIndex - 1, yIndex + 1);
+    neighbourCount += getValue(board, xIndex, yIndex + 1);
+    neighbourCount += getValue(board, xIndex + 1, yIndex + 1);
+    return neighbourCount;
 }
 
 // Main loop
@@ -177,81 +244,34 @@ export function draw(time) {
     const progress = time - last;
     if (progress > step) {
         nextGeneration = [];
-        for (let y = 0; y < board.length; y++) {
-            nextGeneration[y] = [];
-            for (let x = 0; x < board[y].length; x++) {
-                let neighbourCount = 0;
-                // |1|0|0|
-                // |0|x|0|
-                // |0|0|0|
-                neighbourCount += getElementAt(y - 1, x - 1);
-                // |0|1|0|
-                // |0|x|0|
-                // |0|0|0|
-                neighbourCount += getElementAt(y - 1, x);
-                // |0|0|1|
-                // |0|x|0|
-                // |0|0|0|
-                neighbourCount += getElementAt(y - 1, x + 1);
-                // |0|0|0|
-                // |1|x|0|
-                // |0|0|0|
-                neighbourCount += getElementAt(y, x - 1);
-                // |0|0|0|
-                // |0|x|1|
-                // |0|0|0|
-                neighbourCount += getElementAt(y, x + 1);
-                // |0|0|0|
-                // |0|x|0|
-                // |1|0|0|
-                neighbourCount += getElementAt(y + 1, x - 1);
-                // |0|0|0|
-                // |0|x|0|
-                // |0|1|0|
-                neighbourCount += getElementAt(y + 1, x);
-                // |0|0|0|
-                // |0|x|0|
-                // |0|0|1|
-                neighbourCount += getElementAt(y + 1, x + 1);
-                // // Upper row
-                // if (y !== 0) {
-                //     if (x !== 0 && board[y - 1][x - 1] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                //     if (board[y - 1][x] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                //     if (x + 1 !== board[y].length && board[y - 1][x + 1] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                // }
-                // if (x !== 0 && board[y][x - 1] === 1) {
-                //     neighbourCount += 1;
-                // }
-                // if (x + 1 !== board[y].length && board[y][x + 1] === 1) {
-                //     neighbourCount += 1;
-                // }
-
-                // // Bottom row
-                // if (y + 1 !== board.length) {
-                //     if (x !== 0 && board[y + 1][x - 1] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                //     if (board[y + 1][x] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                //     if (x + 1 !== board[y].length && board[y + 1][x + 1] === 1) {
-                //         neighbourCount += 1;
-                //     }
-                // }
-                const current = board[y][x];
-                if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
-                    // console.log(`(${y}, ${x}) died. Neighbours: ${neighbourCount}`);
-                    nextGeneration[y][x] = 0;
-                } else if (current === 0 && neighbourCount === 3) {
-                    nextGeneration[y][x] = 1;
-                } else {
-                    nextGeneration[y][x] = current;
+        if (oneDimensional) {
+            for (let y = 0; y < gridCountY; y++) {
+                for (let x = 0; x < gridCountX; x++) {
+                    const i = x + gridCountX * y;
+                    const neighbourCount = calculate1dNeighbors(i);
+                    const current = board[i];
+                    if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
+                        nextGeneration[i] = 0;
+                    } else if (current === 0 && neighbourCount === 3) {
+                        nextGeneration[i] = 1;
+                    } else {
+                        nextGeneration[i] = current;
+                    }
+                }
+            }
+        } else {
+            for (let y = 0; y < gridCountY; y++) {
+                nextGeneration[y] = [];
+                for (let x = 0; x < gridCountX; x++) {
+                    const neighbourCount = calculateNeighbors(y, x);
+                    const current = board[y][x];
+                    if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
+                        nextGeneration[y][x] = 0;
+                    } else if (current === 0 && neighbourCount === 3) {
+                        nextGeneration[y][x] = 1;
+                    } else {
+                        nextGeneration[y][x] = current;
+                    }
                 }
             }
         }
@@ -267,7 +287,16 @@ export function draw(time) {
 }
 
 function addOrRemoveLife(x, y) {
-    if (board[y][x] === 0) {
+    if (oneDimensional) {
+        const i = x + gridCountX * y;
+        if (board[i] === 0) {
+            board[i] = 1;
+            drawGridRect(x, y);
+        } else {
+            board[i] = 0;
+            clearGridRect(x, y);
+        }
+    } else if (board[y][x] === 0) {
         board[y][x] = 1;
         drawGridRect(x, y);
     } else {
@@ -281,13 +310,13 @@ function clearGrid() {
 }
 
 function drawGrid() {
-    for (let i = 1; i < gridCountX; i++) {
+    for (let i = 1; i < gridCountY; i++) {
         backgroundCanvasContext.beginPath();
         backgroundCanvasContext.rect(0, i * gridHeight, canvasWidth, 1);
         backgroundCanvasContext.fill();
         backgroundCanvasContext.closePath();
     }
-    for (let i = 1; i < gridCountY; i++) {
+    for (let i = 1; i < gridCountX; i++) {
         backgroundCanvasContext.beginPath();
         backgroundCanvasContext.rect(i * gridWidth, 0, 1, canvasHeight);
         backgroundCanvasContext.fill();
@@ -314,20 +343,24 @@ function drawAll() {
 function gridSizeChange(value, keepBoard = true) {
     gridWidth = value;
     gridHeight = value;
-    gridCountX = Math.round(canvasHeight / gridHeight);
-    gridCountY = Math.round(canvasWidth / gridWidth);
+    gridCountY = Math.round(canvasHeight / gridHeight);
+    gridCountX = Math.round(canvasWidth / gridWidth);
     clearAll();
     if (keepBoard) {
-        const newBoard = [];
-        // Expand current board
-        for (let i = 0; i < gridCountX; i++) {
-            newBoard[i] = [];
-            for (let j = 0; j < gridCountY; j++) {
-                // TODO: Improve
-                if (board[i] !== undefined && board[i][j] !== undefined) {
-                    newBoard[i][j] = board[i][j];
-                } else {
-                    newBoard[i][j] = 0;
+        let newBoard = [];
+        if (oneDimensional) {
+            newBoard = createEmptyBoard().flat();
+        } else {
+            // Expand current board
+            for (let i = 0; i < gridCountY; i++) {
+                newBoard[i] = [];
+                for (let j = 0; j < gridCountX; j++) {
+                    // TODO: Improve?
+                    if (board[i] !== undefined && board[i][j] !== undefined) {
+                        newBoard[i][j] = board[i][j];
+                    } else {
+                        newBoard[i][j] = 0;
+                    }
                 }
             }
         }
@@ -353,8 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridX = Math.floor(x / gridWidth);
             const gridY = Math.floor(y / gridHeight);
             if (event.shiftKey) {
-                const selectedRow = board[gridY];
-                for (let i = 0; i < selectedRow.length; i++) {
+                for (let i = 0; i < gridCountX; i++) {
                     addOrRemoveLife(i, gridY);
                 }
             } else {
