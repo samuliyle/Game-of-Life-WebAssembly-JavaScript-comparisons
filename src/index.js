@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import './style.css';
 
 import premadeBoards from './premadeboards';
@@ -41,7 +40,8 @@ const gameCanvasContext = gameCanvas.getContext('2d');
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
-const oneDimensional = false;
+const oneDimensional = true;
+const useWasm = true;
 
 let enableDebugCoordinates = true;
 
@@ -71,43 +71,79 @@ function createEmptyBoard() {
     return emptyBoard;
 }
 
-
-const inArray = new Int32Array(createEmptyBoard().flat());
-const nByte = 4;
-
-// Takes an Int32Array, copies it to the heap and returns a pointer
-function arrayToPtr(array) {
-    const ptr = module._malloc(array.length * nByte);
-    module.HEAP32.set(array, ptr / nByte);
-    return ptr;
-}
-
-// Takes a pointer and  array length, and returns a Int32Array from the heap
-function ptrToArray(ptr, length) {
-    const array = new Int32Array(length);
-    const pos = ptr / nByte;
-    array.set(module.HEAP32.subarray(pos, pos + length));
-    return array;
-}
-
-
-module.onRuntimeInitialized = () => {
-    console.log(module._add(10, 11));
-    const ptr = arrayToPtr(inArray);
-    const result = module._copy_array(ptr, inArray.length);
-    const copiedArray = ptrToArray(result, inArray.length);
-    console.log(inArray);
-    console.log(copiedArray);
-    module._free(inArray);
-    module._free(copiedArray);
-};
-
+// const nByte = Int32Array.BYTES_PER_ELEMENT;
 
 // Initialise board
 let board = createEmptyBoard();
 if (oneDimensional) {
-    board = board.flat();
+    board = new Int32Array(board.flat());
 }
+const bytesPerElement = board.BYTES_PER_ELEMENT;
+
+// Takes an Int32Array, copies it to the heap and returns a pointer
+// function arrayToPtr(array) {
+//     const numBytes = array.length * array.BYTES_PER_ELEMENT;
+//     const ptr = module._malloc(numBytes);
+//     const heapBytes = new Int32Array(module.HEAP32.buffer, ptr, numBytes);
+//     heapBytes.set(new Int32Array(array.buffer));
+//     return heapBytes;
+//     // const ptr = module._malloc(array.length * nByte);
+//     // module.HEAP32.set(array, ptr / nByte);
+//     // return ptr;
+// }
+
+// // Takes a pointer and  array length, and returns a Int32Array from the heap
+// function ptrToArray(ptr, length) {
+//     // const array = new Int32Array(length);
+//     // const pos = ptr / nByte;
+//     return new Int32Array(module.HEAP32.buffer, ptr, length);
+//     // array.set(module.HEAP32.subarray(pos, pos + length));
+//     // return array;
+// }
+
+// function freeArray(heapBytes) {
+//     module._free(heapBytes.byteOffset);
+// }
+
+module.onRuntimeInitialized = () => {
+    // console.log(module._add(10, 11));
+
+    // const len = board.length;
+
+    // // alloc memory, in this case 5*4 bytes
+    // const inputPtr = module._malloc(len * bytesPerElement);
+    // const outputPtr = module._malloc(len * bytesPerElement);
+
+    // module.HEAP32.set(board, inputPtr / bytesPerElement);
+    // module._calculateNextGeneration(inputPtr, outputPtr, gridCountY, gridCountX);
+    // const outputArray = new Int32Array(module.HEAP32.buffer, outputPtr, len);
+    // console.log('The starting array was:', board);
+    // console.log('The result read is:', outputArray);
+
+    // // dealloc memory
+    // module._free(inputPtr);
+    // module._free(outputPtr);
+
+    // const heapBytes = arrayToPtr(board);
+    // const nextGenerationHeapBytes = arrayToPtr(board);
+    // module._calculateNextGeneration(heapBytes, nextGenerationHeapBytes, gridCountY, gridCountX);
+    // const nextGeneration = ptrToArray(nextGenerationHeapBytes, board.length);
+    // console.log(nextGeneration);
+    // freeArray(nextGenerationHeapBytes);
+    // freeArray(heapBytes);
+};
+
+// console.log(module);
+
+const testArray = new Int32Array(gridCountX * gridCountY);
+for (let y = 0; y < gridCountY; y++) {
+    for (let x = 0; x < gridCountX; x++) {
+        const i = x + gridCountX * y;
+        testArray[i] = 1;
+    }
+}
+
+// console.log(testArray);
 
 function getValue(array, x, y) {
     /* eslint-disable */
@@ -264,7 +300,7 @@ function calculate1dNeighbors(i) {
 }
 
 // Main loop
-export function draw(time) {
+export function draw(time, oneStep = false) {
     // Draw life
     animationRequestId = undefined;
     let nextGeneration = null;
@@ -273,24 +309,40 @@ export function draw(time) {
         lastFrame = time;
     }
     const progress = time - last;
-    if (progress > step) {
-        nextGeneration = [];
+    if (oneStep || (progress > step)) {
         if (oneDimensional) {
-            for (let y = 0; y < gridCountY; y++) {
-                for (let x = 0; x < gridCountX; x++) {
-                    const i = x + gridCountX * y;
-                    const neighbourCount = calculate1dNeighbors(i);
-                    const current = board[i];
-                    if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
-                        nextGeneration[i] = 0;
-                    } else if (current === 0 && neighbourCount === 3) {
-                        nextGeneration[i] = 1;
-                    } else {
-                        nextGeneration[i] = current;
+            if (useWasm) {
+                const len = board.length;
+
+                const inputPtr = module._malloc(len * bytesPerElement);
+                const outputPtr = module._malloc(len * bytesPerElement);
+
+                module.HEAP32.set(board, inputPtr / bytesPerElement);
+                module._calculateNextGeneration(inputPtr, outputPtr, gridCountY, gridCountX);
+                nextGeneration = new Int32Array(module.HEAP32.buffer, outputPtr, len);
+
+                // dealloc memory
+                module._free(inputPtr);
+                module._free(outputPtr);
+            } else {
+                nextGeneration = new Int32Array(gridCountY * gridCountX);
+                for (let y = 0; y < gridCountY; y++) {
+                    for (let x = 0; x < gridCountX; x++) {
+                        const i = x + gridCountX * y;
+                        const neighbourCount = calculate1dNeighbors(i);
+                        const current = board[i];
+                        if (current === 1 && (neighbourCount <= 1 || neighbourCount > 3)) {
+                            nextGeneration[i] = 0;
+                        } else if (current === 0 && neighbourCount === 3) {
+                            nextGeneration[i] = 1;
+                        } else {
+                            nextGeneration[i] = current;
+                        }
                     }
                 }
             }
         } else {
+            nextGeneration = [];
             for (let y = 0; y < gridCountY; y++) {
                 nextGeneration[y] = [];
                 for (let x = 0; x < gridCountX; x++) {
@@ -314,7 +366,9 @@ export function draw(time) {
     }
     lastFrame = time;
     drawLife(nextGeneration || board);
-    start();
+    if (!oneStep) {
+        start();
+    }
 }
 
 function addOrRemoveLife(x, y) {
@@ -380,7 +434,7 @@ function gridSizeChange(value, keepBoard = true) {
     if (keepBoard) {
         let newBoard = [];
         if (oneDimensional) {
-            newBoard = createEmptyBoard().flat();
+            newBoard = new Int32Array(createEmptyBoard().flat());
         } else {
             // Expand current board
             for (let i = 0; i < gridCountY; i++) {
@@ -462,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const nextButton = document.getElementById('nextButton');
     nextButton.addEventListener('click', () => {
-        draw();
+        draw(performance.now(), true);
     });
 
     const startStopButton = document.getElementById('startStopButton');
