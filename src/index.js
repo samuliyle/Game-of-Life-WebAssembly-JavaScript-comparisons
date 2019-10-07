@@ -41,7 +41,8 @@ const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
 const oneDimensional = true;
-const useWasm = true;
+const useWasm = false;
+let performances = [];
 
 let enableDebugCoordinates = true;
 
@@ -229,6 +230,10 @@ function stop() {
     if (animationRequestId) {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
+        const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
+        const result = average(performances);
+        console.log(result);
+        performances = [];
     }
 }
 
@@ -310,6 +315,7 @@ export function draw(time, oneStep = false) {
     }
     const progress = time - last;
     if (oneStep || (progress > step)) {
+        const oneDimStart = performance.now();
         if (oneDimensional) {
             if (useWasm) {
                 const len = board.length;
@@ -363,6 +369,7 @@ export function draw(time, oneStep = false) {
         board = nextGeneration;
         generation += 1;
         updateGeneration(generation);
+        performances.push((performance.now() - oneDimStart));
     }
     lastFrame = time;
     drawLife(nextGeneration || board);

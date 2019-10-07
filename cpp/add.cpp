@@ -59,4 +59,18 @@ extern "C"
             }
         }
     }
+
+    // int main()
+    // {
+    //     int *board = new int[2400];
+    //     for (int i = 0; i < 50; i++)
+    //     {
+
+    //         int *nextGeneration = new int[2400];
+    //         calculateNextGeneration(board, nextGeneration, 40, 60);
+    //         board = nextGeneration;
+    //     }
+
+    //     return 0;
+    // }
 }
