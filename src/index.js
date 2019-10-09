@@ -1,6 +1,8 @@
 import './style.css';
 
+import { initShaderProgram, initBuffers } from './webGLUtil';
 import premadeBoards from './premadeboards';
+import shaders from './shaders';
 
 // eslint-disable-next-line import/extensions
 import adderino from './add.js';
@@ -35,19 +37,28 @@ const generationElement = document.getElementById('generation');
 
 const backgroundCanvasContext = backgroundCanvas.getContext('2d');
 const debugCanvasContext = debugCanvas.getContext('2d');
-const gameCanvasContext = gameCanvas.getContext('2d');
+
+let programInfo = null;
+let buffers = null;
+let gameCanvasContext = null;
 
 const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
 const oneDimensional = true;
-const useWasm = false;
-let performances = [];
+const useWasm = true;
+const useWebGL = true;
 
+const offset = 0;
+const count = 6;
+let primitiveType = null;
+
+let neighbourCalcTimes = [];
+let drawTimes = [];
 let enableDebugCoordinates = true;
 
-let gridWidth = gridSizeSlider.value;
-let gridHeight = gridSizeSlider.value;
+let gridWidth = parseInt(gridSizeSlider.value, 10);
+let gridHeight = parseInt(gridSizeSlider.value, 10);
 gridElement.textContent = gridSizeSlider.value;
 let step = iterationSlider.value;
 speedElement.textContent = step;
@@ -72,7 +83,44 @@ function createEmptyBoard() {
     return emptyBoard;
 }
 
-// const nByte = Int32Array.BYTES_PER_ELEMENT;
+function initWebGL() {
+    const shaderProgram = initShaderProgram(gameCanvasContext, shaders.vsSource, shaders.fsSource);
+    programInfo = {
+        program: shaderProgram,
+        attribLocations: {
+            vertexPosition: gameCanvasContext.getAttribLocation(shaderProgram, 'aVertexPosition'),
+        },
+        uniformLocations: {
+            resolutionUniformLocation: gameCanvasContext.getUniformLocation(shaderProgram, 'u_resolution'),
+        },
+    };
+
+    buffers = initBuffers(gameCanvasContext);
+
+    // Tell WebGL to use our program when drawing.
+    // All drawn webl gl shapes are the same (square), so calling this at init instead of each draw.
+    gameCanvasContext.useProgram(programInfo.program);
+
+    {
+        const numComponents = 2;
+        const type = gameCanvasContext.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offsetAtt = 0;
+        gameCanvasContext.bindBuffer(gameCanvasContext.ARRAY_BUFFER, buffers.position);
+        gameCanvasContext.vertexAttribPointer(
+            programInfo.attribLocations.vertexPosition,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offsetAtt,
+        );
+        gameCanvasContext.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+    }
+
+    primitiveType = gameCanvasContext.TRIANGLES;
+}
 
 // Initialise board
 let board = createEmptyBoard();
@@ -81,92 +129,93 @@ if (oneDimensional) {
 }
 const bytesPerElement = board.BYTES_PER_ELEMENT;
 
-// Takes an Int32Array, copies it to the heap and returns a pointer
-// function arrayToPtr(array) {
-//     const numBytes = array.length * array.BYTES_PER_ELEMENT;
-//     const ptr = module._malloc(numBytes);
-//     const heapBytes = new Int32Array(module.HEAP32.buffer, ptr, numBytes);
-//     heapBytes.set(new Int32Array(array.buffer));
-//     return heapBytes;
-//     // const ptr = module._malloc(array.length * nByte);
-//     // module.HEAP32.set(array, ptr / nByte);
-//     // return ptr;
-// }
+function setRectangle(x, y) {
+    const x1 = (x * gridWidth) + 1;
+    const x2 = (x * gridWidth) + gridWidth;
+    const y1 = (y * gridHeight) + 1;
+    const y2 = (y * gridHeight) + gridHeight;
 
-// // Takes a pointer and  array length, and returns a Int32Array from the heap
-// function ptrToArray(ptr, length) {
-//     // const array = new Int32Array(length);
-//     // const pos = ptr / nByte;
-//     return new Int32Array(module.HEAP32.buffer, ptr, length);
-//     // array.set(module.HEAP32.subarray(pos, pos + length));
-//     // return array;
-// }
-
-// function freeArray(heapBytes) {
-//     module._free(heapBytes.byteOffset);
-// }
-
-module.onRuntimeInitialized = () => {
-    // console.log(module._add(10, 11));
-
-    // const len = board.length;
-
-    // // alloc memory, in this case 5*4 bytes
-    // const inputPtr = module._malloc(len * bytesPerElement);
-    // const outputPtr = module._malloc(len * bytesPerElement);
-
-    // module.HEAP32.set(board, inputPtr / bytesPerElement);
-    // module._calculateNextGeneration(inputPtr, outputPtr, gridCountY, gridCountX);
-    // const outputArray = new Int32Array(module.HEAP32.buffer, outputPtr, len);
-    // console.log('The starting array was:', board);
-    // console.log('The result read is:', outputArray);
-
-    // // dealloc memory
-    // module._free(inputPtr);
-    // module._free(outputPtr);
-
-    // const heapBytes = arrayToPtr(board);
-    // const nextGenerationHeapBytes = arrayToPtr(board);
-    // module._calculateNextGeneration(heapBytes, nextGenerationHeapBytes, gridCountY, gridCountX);
-    // const nextGeneration = ptrToArray(nextGenerationHeapBytes, board.length);
-    // console.log(nextGeneration);
-    // freeArray(nextGenerationHeapBytes);
-    // freeArray(heapBytes);
-};
-
-// console.log(module);
-
-const testArray = new Int32Array(gridCountX * gridCountY);
-for (let y = 0; y < gridCountY; y++) {
-    for (let x = 0; x < gridCountX; x++) {
-        const i = x + gridCountX * y;
-        testArray[i] = 1;
-    }
+    gameCanvasContext.bufferData(gameCanvasContext.ARRAY_BUFFER, new Float32Array([
+        x1, y1,
+        x2, y1,
+        x1, y2,
+        x1, y2,
+        x2, y1,
+        x2, y2]), gameCanvasContext.STATIC_DRAW);
 }
 
-// console.log(testArray);
+function setRect(x, y) {
+    const x1 = (x * gridWidth) + 1;
+    const x2 = (x * gridWidth) + gridWidth;
+    const y1 = (y * gridHeight) + 1;
+    const y2 = (y * gridHeight) + gridHeight;
+
+    return [x1, y1,
+        x2, y1,
+        x1, y2,
+        x1, y2,
+        x2, y1,
+        x2, y2];
+}
+
+// Draw the scene.
+function drawScene(rectCount = count) {
+    gameCanvasContext.viewport(0, 0, gameCanvasContext.canvas.width, gameCanvasContext.canvas.height);
+
+    // Set the shader uniforms
+    gameCanvasContext.uniform2f(
+        programInfo.uniformLocations.resolutionUniformLocation,
+        gameCanvasContext.canvas.clientWidth,
+        gameCanvasContext.canvas.clientHeight,
+    );
+
+    gameCanvasContext.drawArrays(primitiveType, offset, rectCount);
+}
 
 function getValue(array, x, y) {
-    /* eslint-disable */
     return array[(((x) % gridCountX + gridCountX) % gridCountX) + gridCountX * (((y) % gridCountY + gridCountY) % gridCountY)];
-    /* eslint-enable */
 }
 
 function getElementAt(x, y) {
-    /* eslint-disable */
     return board[(y % gridCountY + gridCountY) % gridCountY][(x % gridCountX + gridCountX) % gridCountX];
-    /* eslint-enable */
 }
 
 function clearGridRect(x, y) {
-    gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    if (useWebGL) {
+        // TODO: Fix
+        // turn on the scissor test.
+        gameCanvasContext.enable(gameCanvasContext.SCISSOR_TEST);
+
+        const x1 = (x * gridWidth) + 1;
+        const x2 = (x * gridWidth) + gridWidth;
+        const y1 = (y * gridHeight) + 1;
+        const y2 = (y * gridHeight) + gridHeight;
+
+        // set the scissor rectangle.
+        gameCanvasContext.scissor(x1, y1, x2, y2);
+
+        // clear.
+        gameCanvasContext.clearColor(0, 0.0, 0.0, 0);
+        gameCanvasContext.clearDepth(1.0); // Clear everything
+        gameCanvasContext.clear(gameCanvasContext.COLOR_BUFFER_BIT | gameCanvasContext.DEPTH_BUFFER_BIT);
+
+        // turn off the scissor test so you can render like normal again.
+        gameCanvasContext.disable(gameCanvasContext.SCISSOR_TEST);
+    } else {
+        gameCanvasContext.clearRect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+    }
 }
 
 function drawGridRect(x, y) {
-    gameCanvasContext.beginPath();
-    gameCanvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
-    gameCanvasContext.fill();
-    gameCanvasContext.closePath();
+    if (useWebGL) {
+        setRectangle(x, y);
+        drawScene();
+    } else {
+        gameCanvasContext.beginPath();
+        gameCanvasContext.rect((x * gridWidth) + 1, (y * gridHeight) + 1, gridWidth - 1, gridHeight - 1);
+        gameCanvasContext.fill();
+        gameCanvasContext.closePath();
+    }
 }
 
 function fillDebugCoordinates(x, y) {
@@ -200,22 +249,42 @@ function drawDebugCoordinates() {
 }
 
 function clearLife() {
-    gameCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+    if (useWebGL) {
+        gameCanvasContext.clearColor(0, 0.0, 0.0, 0);
+        gameCanvasContext.clearDepth(1.0);
+        gameCanvasContext.clear(gameCanvasContext.COLOR_BUFFER_BIT | gameCanvasContext.DEPTH_BUFFER_BIT);
+    } else {
+        gameCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+    }
 }
 
 export function drawLife(state = board) {
     clearLife();
+    const rects = [];
     for (let y = 0; y < gridCountY; y++) {
         for (let x = 0; x < gridCountX; x++) {
             if (oneDimensional) {
                 const i = x + gridCountX * y;
                 if (state[i] === 1) {
-                    drawGridRect(x, y);
+                    // For webgl, group all rects into one array, so buffer is only set once and drawArrays is called once
+                    if (useWebGL) {
+                        rects.push(setRect(x, y));
+                    } else {
+                        drawGridRect(x, y);
+                    }
                 }
             } else if (state[y][x] === 1) {
                 drawGridRect(x, y);
             }
         }
+    }
+    if (useWebGL) {
+        const rectCount = rects.length;
+        const flattenRects = rects.flat();
+        gameCanvasContext.bufferData(
+            gameCanvasContext.ARRAY_BUFFER, new Float32Array(flattenRects), gameCanvasContext.STATIC_DRAW,
+        );
+        drawScene(rectCount * count);
     }
 }
 
@@ -231,9 +300,10 @@ function stop() {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
         const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-        const result = average(performances);
-        console.log(result);
-        performances = [];
+        console.log('Draw avg', average(drawTimes));
+        console.log('Neighbour calcs avg', average(neighbourCalcTimes));
+        drawTimes = [];
+        neighbourCalcTimes = [];
     }
 }
 
@@ -291,7 +361,6 @@ function calculateNeighbors(y, x) {
 function calculate1dNeighbors(i) {
     const xIndex = i % gridCountX;
     let neighbourCount = 0;
-    // eslint-disable-next-line no-bitwise
     const yIndex = ~~(i / gridCountX);
     neighbourCount += getValue(board, xIndex - 1, yIndex - 1);
     neighbourCount += getValue(board, xIndex, yIndex - 1);
@@ -369,10 +438,12 @@ export function draw(time, oneStep = false) {
         board = nextGeneration;
         generation += 1;
         updateGeneration(generation);
-        performances.push((performance.now() - oneDimStart));
+        neighbourCalcTimes.push((performance.now() - oneDimStart));
     }
     lastFrame = time;
+    const drawStart = performance.now();
     drawLife(nextGeneration || board);
+    drawTimes.push((performance.now() - drawStart));
     if (!oneStep) {
         start();
     }
@@ -433,8 +504,8 @@ function drawAll() {
 }
 
 function gridSizeChange(value, keepBoard = true) {
-    gridWidth = value;
-    gridHeight = value;
+    gridWidth = parseInt(value, 10);
+    gridHeight = parseInt(value, 10);
     gridCountY = Math.round(canvasHeight / gridHeight);
     gridCountX = Math.round(canvasWidth / gridWidth);
     clearAll();
@@ -462,12 +533,22 @@ function gridSizeChange(value, keepBoard = true) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    backgroundCanvasContext.fillStyle = 'grey';
+    if (useWebGL) {
+        gameCanvasContext = gameCanvas.getContext('webgl', { preserveDrawingBuffer: true });
+        if (gameCanvasContext === null) {
+            console.error('WebGL not supported');
+        } else {
+            initWebGL();
+        }
+    }
+    if (gameCanvasContext === null) {
+        gameCanvasContext = gameCanvas.getContext('2d');
+        gameCanvasContext.fillStyle = 'black';
+    }
 
+    backgroundCanvasContext.fillStyle = 'grey';
     debugCanvasContext.fillStyle = 'red';
     debugCanvasContext.textAlign = 'center';
-
-    gameCanvasContext.fillStyle = 'black';
 
     interactionCanvas.addEventListener('click', (event) => {
         if (generation === 0) {
