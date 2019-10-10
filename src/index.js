@@ -21,11 +21,11 @@ var module = adderino({
         return path;
     },
 });
-
 const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
 const interactionCanvas = document.getElementById('interactionCanvas');
+
 
 const iterationSlider = document.getElementById('iterationIntervalSlider');
 const gridSizeSlider = document.getElementById('gridSizeSlider');
@@ -48,6 +48,18 @@ const canvasHeight = gameCanvas.height;
 const oneDimensional = true;
 const useWasm = true;
 const useWebGL = true;
+const useOpenGL = true;
+
+module.onRuntimeInitialized = () => {
+    module.canvas = gameCanvas;
+    if (useOpenGL) {
+        module._initOpenGL(canvasWidth, canvasHeight);
+        module._drawScene();
+        // setInterval(module._drawScene, 10);
+    }
+};
+
+console.log(module);
 
 const offset = 0;
 const count = 6;
@@ -533,17 +545,19 @@ function gridSizeChange(value, keepBoard = true) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (useWebGL) {
-        gameCanvasContext = gameCanvas.getContext('webgl', { preserveDrawingBuffer: true });
-        if (gameCanvasContext === null) {
-            console.error('WebGL not supported');
-        } else {
-            initWebGL();
+    if (!useOpenGL) {
+        if (useWebGL) {
+            gameCanvasContext = gameCanvas.getContext('webgl', { preserveDrawingBuffer: true });
+            if (gameCanvasContext === null) {
+                console.error('WebGL not supported');
+            } else {
+                initWebGL();
+            }
         }
-    }
-    if (gameCanvasContext === null) {
-        gameCanvasContext = gameCanvas.getContext('2d');
-        gameCanvasContext.fillStyle = 'black';
+        if (gameCanvasContext === null) {
+            gameCanvasContext = gameCanvas.getContext('2d');
+            gameCanvasContext.fillStyle = 'black';
+        }
     }
 
     backgroundCanvasContext.fillStyle = 'grey';
@@ -623,5 +637,5 @@ document.addEventListener('DOMContentLoaded', () => {
         clearBoard();
     });
 
-    drawAll();
+    // drawAll();
 });
