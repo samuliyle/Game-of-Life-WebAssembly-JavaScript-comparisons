@@ -50,17 +50,6 @@ const useWasm = true;
 const useWebGL = true;
 const useOpenGL = true;
 
-module.onRuntimeInitialized = () => {
-    module.canvas = gameCanvas;
-    if (useOpenGL) {
-        module._initOpenGL(canvasWidth, canvasHeight);
-        module._drawScene();
-        // setInterval(module._drawScene, 10);
-    }
-};
-
-console.log(module);
-
 const offset = 0;
 const count = 6;
 let primitiveType = null;
@@ -78,6 +67,8 @@ speedElement.textContent = step;
 let gridCountY = Math.round(canvasHeight / gridHeight);
 let gridCountX = Math.round(canvasWidth / gridWidth);
 
+console.log({ gridCountY, gridCountX });
+
 let last = null;
 let lastFrame = null;
 
@@ -94,6 +85,18 @@ function createEmptyBoard() {
     }
     return emptyBoard;
 }
+
+module.onRuntimeInitialized = () => {
+    module.canvas = gameCanvas;
+    if (useOpenGL) {
+        module._initOpenGL(canvasWidth, canvasHeight);
+        // module._draw();
+        // module._drawScene();
+        // setInterval(module._draw, 100);
+    }
+};
+
+console.log(module);
 
 function initWebGL() {
     const shaderProgram = initShaderProgram(gameCanvasContext, shaders.vsSource, shaders.fsSource);
@@ -138,6 +141,13 @@ function initWebGL() {
 let board = createEmptyBoard();
 if (oneDimensional) {
     board = new Int32Array(board.flat());
+    board[0] = 1;
+    board[1] = 1;
+    board[2] = 1;
+    board[3] = 1;
+    board[4] = 1;
+    board[5] = 1;
+    board[6] = 1;
 }
 const bytesPerElement = board.BYTES_PER_ELEMENT;
 
@@ -509,7 +519,9 @@ function clearAll() {
 
 function drawAll() {
     drawGrid();
-    drawLife();
+    if (!useOpenGL) {
+        drawLife();
+    }
     if (enableDebugCoordinates) {
         drawDebugCoordinates();
     }
@@ -637,5 +649,5 @@ document.addEventListener('DOMContentLoaded', () => {
         clearBoard();
     });
 
-    // drawAll();
+    drawAll();
 });
