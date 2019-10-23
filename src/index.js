@@ -26,7 +26,6 @@ const gameCanvas = document.getElementById('gameCanvas');
 const debugCanvas = document.getElementById('debugCanvas');
 const interactionCanvas = document.getElementById('interactionCanvas');
 
-
 const iterationSlider = document.getElementById('iterationIntervalSlider');
 const gridSizeSlider = document.getElementById('gridSizeSlider');
 
@@ -46,9 +45,9 @@ const canvasWidth = gameCanvas.width;
 const canvasHeight = gameCanvas.height;
 
 const oneDimensional = true;
-const useWasm = true;
+const useWasm = false;
 const useWebGL = true;
-const useOpenGL = true;
+const useOpenGL = false;
 
 const offset = 0;
 const count = 6;
@@ -66,8 +65,6 @@ speedElement.textContent = step;
 
 let gridCountY = Math.round(canvasHeight / gridHeight);
 let gridCountX = Math.round(canvasWidth / gridWidth);
-
-console.log({ gridCountY, gridCountX });
 
 let last = null;
 let lastFrame = null;
@@ -141,13 +138,6 @@ function initWebGL() {
 let board = createEmptyBoard();
 if (oneDimensional) {
     board = new Int32Array(board.flat());
-    board[0] = 1;
-    board[1] = 1;
-    board[2] = 1;
-    board[3] = 1;
-    board[4] = 1;
-    board[5] = 1;
-    board[6] = 1;
 }
 const bytesPerElement = board.BYTES_PER_ELEMENT;
 
@@ -195,7 +185,10 @@ function drawScene(rectCount = count) {
 }
 
 function getValue(array, x, y) {
-    return array[(((x) % gridCountX + gridCountX) % gridCountX) + gridCountX * (((y) % gridCountY + gridCountY) % gridCountY)];
+    const xIndex = ((x % gridCountX + gridCountX) % gridCountX);
+    const yIndex = ((y % gridCountY + gridCountY) % gridCountY);
+    const index = xIndex + gridCountX * yIndex;
+    return array[index];
 }
 
 function getElementAt(x, y) {
@@ -418,7 +411,7 @@ export function draw(time, oneStep = false) {
                 module._calculateNextGeneration(inputPtr, outputPtr, gridCountY, gridCountX);
                 nextGeneration = new Int32Array(module.HEAP32.buffer, outputPtr, len);
 
-                // dealloc memory
+                // deallocate memory
                 module._free(inputPtr);
                 module._free(outputPtr);
             } else {

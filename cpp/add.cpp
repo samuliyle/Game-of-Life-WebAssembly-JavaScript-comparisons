@@ -116,7 +116,6 @@ extern "C"
 
         // GLfloat *wow = arr.data();
 
-
         // glBufferData(GL_ARRAY_BUFFER, sizeof(uwu), uwu, GL_STATIC_DRAW);
 
         glViewport(0, 0, canvasWidth, canvasHeight);
@@ -155,7 +154,7 @@ extern "C"
     EMSCRIPTEN_KEEPALIVE
     int getValue(int *array, int x, int y, int gridCountY, int gridCountX)
     {
-        return array[(((x) % gridCountX + gridCountX) % gridCountX) + gridCountX * (((y) % gridCountY + gridCountY) % gridCountY)];
+        return array[((x % gridCountX + gridCountX) % gridCountX) + gridCountX * ((y % gridCountY + gridCountY) % gridCountY)];
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -186,14 +185,17 @@ extern "C"
                 nextGeneration[i] = 1;
                 int neighbourCount = calculate1dNeighbors(board, i, gridCountY, gridCountX);
                 int current = board[i];
+                // Rules 1 and 3
                 if (current == 1 && (neighbourCount <= 1 || neighbourCount > 3))
                 {
                     nextGeneration[i] = 0;
                 }
+                // Rule 4
                 else if (current == 0 && neighbourCount == 3)
                 {
                     nextGeneration[i] = 1;
                 }
+                // Rule 2
                 else
                 {
                     nextGeneration[i] = current;
@@ -213,10 +215,11 @@ extern "C"
         // free(nextGeneration);
     }
 
- EMSCRIPTEN_KEEPALIVE
+    EMSCRIPTEN_KEEPALIVE
     void initOpenGL(int width, int height)
     {
-        for (int i = 0; i < gameGridCountX; i++) {
+        for (int i = 0; i < gameGridCountX; i++)
+        {
             gameBoard[i] = 1;
         }
         canvasWidth = width;
@@ -260,7 +263,6 @@ extern "C"
         uniAttrib = glGetUniformLocation(shaderProgram, "u_resolution");
         emscripten_set_main_loop(draw, 60, 1);
     }
-
 
     // int main()
     // {
