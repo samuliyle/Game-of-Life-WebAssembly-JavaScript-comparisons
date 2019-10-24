@@ -1,7 +1,6 @@
 import './style.css';
 
 import { initShaderProgram, initBuffers } from './webGLUtil';
-import premadeBoards from './premadeboards';
 import shaders from './shaders';
 
 // eslint-disable-next-line import/extensions
@@ -607,19 +606,19 @@ document.addEventListener('DOMContentLoaded', () => {
         gridSizeChange(event.target.value);
         gridElement.textContent = event.target.value;
     });
-    const premadeBoardSelect = document.getElementById('premadeBoardSelect');
-    premadeBoardSelect.addEventListener('change', (event) => {
-        if (event.target.value.length !== 0) {
-            const premadeBoard = premadeBoards[event.target.value];
-            if (premadeBoard) {
-                gridSizeSlider.value = premadeBoard.gridSize;
-                iterationSlider.value = premadeBoard.speed;
-                step = premadeBoard.speed;
-                board = premadeBoard.board;
-                gridSizeChange(premadeBoard.gridSize, false);
-            }
-        }
-    });
+    // const premadeBoardSelect = document.getElementById('premadeBoardSelect');
+    // premadeBoardSelect.addEventListener('change', (event) => {
+    //     if (event.target.value.length !== 0) {
+    //         const premadeBoard = premadeBoards[event.target.value];
+    //         if (premadeBoard) {
+    //             gridSizeSlider.value = premadeBoard.gridSize;
+    //             iterationSlider.value = premadeBoard.speed;
+    //             step = premadeBoard.speed;
+    //             board = premadeBoard.board;
+    //             gridSizeChange(premadeBoard.gridSize, false);
+    //         }
+    //     }
+    // });
 
     const nextButton = document.getElementById('nextButton');
     nextButton.addEventListener('click', () => {

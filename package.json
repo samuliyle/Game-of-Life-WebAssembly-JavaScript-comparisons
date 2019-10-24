@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "start": "webpack-dev-server --open"
+    "build": "webpack --config ./webpack.config.js",
+    "start": "webpack-dev-server --open --config ./webpack.config.js",
+    "startPureJS": "webpack-dev-server --open --config ./webpack.config.purejs.js",
+    "startJSWasm": "webpack-dev-server --open --config ./webpack.config.jswasm.js"
   },
   "repository": {
     "type": "git",

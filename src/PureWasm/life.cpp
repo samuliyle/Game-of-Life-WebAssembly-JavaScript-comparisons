@@ -270,7 +270,7 @@ extern "C"
                 int yIndex = i / gameGridCountX;
                 if (yIndex == 10)
                 {
-                    if (xIndex != 0 || xIndex != (gameGridCountX - 1))
+                    if (xIndex != 0 && xIndex != (gameGridCountX - 1))
                     {
                         gameBoard[i] = 1;
                     }
