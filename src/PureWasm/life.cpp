@@ -1,7 +1,5 @@
 #include <emscripten.h>
 
-#include <functional>
-
 #include <SDL.h>
 
 #define GL_GLEXT_PROTOTYPES 1
@@ -16,27 +14,21 @@
 
 // Shader sources
 
-const GLchar *vertexSourceTri =
-    "attribute vec4 aVertexPosition;              \n"
-    "void main()                                  \n"
-    "{                                            \n"
-    "  gl_Position = vec4(position.xyz, 1.0);     \n"
-    "}                                            \n";
 const GLchar *vertexSource =
-    "attribute vec2 aVertexPosition;              \n"
-    "uniform vec2 u_resolution;                   \n"
-    "void main()                                  \n"
-    "{                                            \n"
-    "  vec2 zeroToOne = aVertexPosition / u_resolution;     \n"
-    "  vec2 zeroToTwo = zeroToOne * 2.0;     \n"
-    "  vec2 clipSpace = zeroToTwo - 1.0;     \n"
-    "  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);     \n"
-    "}                                            \n";
+    "attribute vec2 aVertexPosition;                      \n"
+    "uniform vec2 u_resolution;                           \n"
+    "void main()                                          \n"
+    "{                                                    \n"
+    "  vec2 zeroToOne = aVertexPosition / u_resolution;   \n"
+    "  vec2 zeroToTwo = zeroToOne * 2.0;                  \n"
+    "  vec2 clipSpace = zeroToTwo - 1.0;                  \n"
+    "  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1); \n"
+    "}                                                    \n";
 const GLchar *fragmentSource =
-    "void main()                                  \n"
-    "{                                            \n"
-    "  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);    \n"
-    "}                                            \n";
+    "void main()                                          \n"
+    "{                                                    \n"
+    "  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);           \n"
+    "}                                                    \n";
 
 SDL_Window *window;
 
@@ -52,7 +44,6 @@ const int gameGridCountX = canvasWidth / gridWidth;
 const int gameGridCountY = canvasHeight / gridHeight;
 
 const int boardSize = gameGridCountX * gameGridCountY;
-// int *gameBoard = (int *)malloc(sizeof(int *) * boardSize);
 
 std::array<int, boardSize> gameBoard{};
 
@@ -61,33 +52,37 @@ std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
 std::vector<float> performanceStamps;
 
 int generation = 0;
-// 2 seconds
 const float step = 20;
 
 extern "C"
 {
     EMSCRIPTEN_KEEPALIVE
-    void setRect(int x, int y, std::vector<float> &arr)
+    void setRect(int x, int y, std::vector<GLfloat> &arr)
     {
         const GLfloat _x1 = (x * gridWidth) + 1.0f;
         const GLfloat _x2 = (x * gridWidth) + gridWidth;
         const GLfloat _y1 = (y * gridHeight) + 1.0f;
         const GLfloat _y2 = (y * gridHeight) + gridHeight;
-
-        arr.push_back(_x1);
-        arr.push_back(_y1);
-        arr.push_back(_x2);
-        arr.push_back(_y1);
-        arr.push_back(_x1);
-        arr.push_back(_y2);
-        arr.push_back(_x1);
-        arr.push_back(_y2);
-        arr.push_back(_x2);
-        arr.push_back(_y1);
-        arr.push_back(_x2);
-        arr.push_back(_y2);
+        arr.insert(arr.end(), {_x1, _y1,
+                               _x2, _y1,
+                               _x1, _y2,
+                               _x1, _y2,
+                               _x2, _y1,
+                               _x2, _y2});
     }
 
+    // arr.push_back(_x1);
+    // arr.push_back(_y1);
+    // arr.push_back(_x2);
+    // arr.push_back(_y1);
+    // arr.push_back(_x1);
+    // arr.push_back(_y2);
+    // arr.push_back(_x1);
+    // arr.push_back(_y2);
+    // arr.push_back(_x2);
+    // arr.push_back(_y1);
+    // arr.push_back(_x2);
+    // arr.push_back(_y2);
     EMSCRIPTEN_KEEPALIVE
     void clearLife()
     {
@@ -101,14 +96,12 @@ extern "C"
     }
 
     EMSCRIPTEN_KEEPALIVE
-    void drawScene(int count = 6)
+    void drawScene(int count)
     {
         glViewport(0, 0, canvasWidth, canvasHeight);
-
         glUniform2f(uniAttrib, canvasWidth, canvasHeight);
-        // Draw a square from the 6 vertices
+        // Draw squares from the vertices
         glDrawArrays(GL_TRIANGLES, 0, count);
-
         SDL_GL_SwapWindow(window);
     }
 
@@ -116,7 +109,7 @@ extern "C"
     void drawLife()
     {
         clearLife();
-        std::vector<float> arr;
+        std::vector<GLfloat> vertexes;
         for (int y = 0; y < gameGridCountY; y++)
         {
             for (int x = 0; x < gameGridCountX; x++)
@@ -124,12 +117,12 @@ extern "C"
                 int i = x + gameGridCountX * y;
                 if (gameBoard[i] == 1)
                 {
-                    setRect(x, y, arr);
+                    setRect(x, y, vertexes);
                 }
             }
         }
-        glBufferData(GL_ARRAY_BUFFER, arr.size() * sizeof(GLfloat), arr.data(), GL_STATIC_DRAW);
-        drawScene(arr.size() / 2);
+        glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(GLfloat), vertexes.data(), GL_STATIC_DRAW);
+        drawScene(vertexes.size() / 2);
     }
 
     EMSCRIPTEN_KEEPALIVE
