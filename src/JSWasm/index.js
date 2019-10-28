@@ -135,18 +135,18 @@ function setRectangle(x, y) {
         x2, y2]), gameCanvasContext.STATIC_DRAW);
 }
 
-function setRect(x, y) {
+function setRect(x, y, arr) {
     const x1 = (x * gridWidth) + 1;
     const x2 = (x * gridWidth) + gridWidth;
     const y1 = (y * gridHeight) + 1;
     const y2 = (y * gridHeight) + gridHeight;
 
-    return [x1, y1,
+    arr.push(x1, y1,
         x2, y1,
         x1, y2,
         x1, y2,
         x2, y1,
-        x2, y2];
+        x2, y2);
 }
 
 // Draw the scene.
@@ -234,16 +234,14 @@ export function drawLife(state = board) {
             const i = x + gridCountX * y;
             if (state[i] === 1) {
                 // For webgl, group all rects into one array, so buffer is only set once and drawArrays is called once
-                rects.push(setRect(x, y));
+                setRect(x, y, rects);
             }
         }
     }
-    const rectCount = rects.length;
-    const flattenRects = rects.flat();
     gameCanvasContext.bufferData(
-        gameCanvasContext.ARRAY_BUFFER, new Float32Array(flattenRects), gameCanvasContext.STATIC_DRAW,
+        gameCanvasContext.ARRAY_BUFFER, new Float32Array(rects), gameCanvasContext.STATIC_DRAW,
     );
-    drawScene(rectCount * count);
+    drawScene(rects.length / 2);
 }
 
 function start() {
