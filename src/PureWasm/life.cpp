@@ -46,10 +46,12 @@ const int gameGridCountY = canvasHeight / gridHeight;
 const int boardSize = gameGridCountX * gameGridCountY;
 
 std::array<int, boardSize> gameBoard{};
+std::array<int, boardSize> nextGeneration{};
 
 std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
 
 std::vector<float> performanceStamps;
+std::vector<float> drawStamps;
 
 int generation = 0;
 const float step = 20;
@@ -71,28 +73,12 @@ extern "C"
                                _x2, _y2});
     }
 
-    // arr.push_back(_x1);
-    // arr.push_back(_y1);
-    // arr.push_back(_x2);
-    // arr.push_back(_y1);
-    // arr.push_back(_x1);
-    // arr.push_back(_y2);
-    // arr.push_back(_x1);
-    // arr.push_back(_y2);
-    // arr.push_back(_x2);
-    // arr.push_back(_y1);
-    // arr.push_back(_x2);
-    // arr.push_back(_y2);
     EMSCRIPTEN_KEEPALIVE
     void clearLife()
     {
         // Clear the screen
         glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-        // glClearDepthf(1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // glDisable(GL_DEPTH_TEST);
-        // glEnable(GL_BLEND);
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     EMSCRIPTEN_KEEPALIVE
@@ -126,14 +112,14 @@ extern "C"
     }
 
     EMSCRIPTEN_KEEPALIVE
-    int getValue(std::array<int, boardSize> &arr, int x, int y, int gridCountY, int gridCountX)
+    int getValue(std::array<int, boardSize> const& arr, int x, int y, int gridCountY, int gridCountX)
     {
         return arr[((x % gridCountX + gridCountX) % gridCountX) + gridCountX * ((y % gridCountY + gridCountY) % gridCountY)];
     }
 
     //     int calculate1dNeighbors(int *board, int i, int gridCountY, int gridCountX)
     EMSCRIPTEN_KEEPALIVE
-    int calculate1dNeighbors(std::array<int, boardSize> &board, int i, int gridCountY, int gridCountX)
+    int calculate1dNeighbors(std::array<int, boardSize> const& board, int i, int gridCountY, int gridCountX)
     {
         int xIndex = i % gridCountX;
         int neighbourCount = 0;
@@ -151,9 +137,8 @@ extern "C"
 
     // void calculateNextGeneration(int *board, int *nextGeneration, int gridCountY, int gridCountX)
     EMSCRIPTEN_KEEPALIVE
-    std::array<int, boardSize> calculateNextGeneration(std::array<int, boardSize> &board, int gridCountY, int gridCountX)
+    std::array<int, boardSize> calculateNextGeneration(std::array<int, boardSize> const& board, std::array<int, boardSize> &nextGeneration, int gridCountY, int gridCountX)
     {
-        std::array<int, boardSize> nextGeneration{};
         for (int y = 0; y < gridCountY; y++)
         {
             for (int x = 0; x < gridCountX; x++)
@@ -185,24 +170,32 @@ extern "C"
     EMSCRIPTEN_KEEPALIVE
     void draw()
     {
-        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+        auto now = std::chrono::steady_clock::now();
         auto progress = std::chrono::duration_cast<std::chrono::milliseconds>(now - last).count();
         if (progress > step)
         {
-            std::chrono::steady_clock::time_point performanceNow = std::chrono::steady_clock::now();
-            auto newBoard = calculateNextGeneration(gameBoard, gameGridCountY, gameGridCountX);
-            gameBoard = newBoard;
-            drawLife();
-            last = now;
-            std::chrono::steady_clock::time_point performanceEnd = std::chrono::steady_clock::now();
-            auto performance = std::chrono::duration_cast<std::chrono::milliseconds>(performanceEnd - performanceNow).count();
-            std::cout << performance << "\n";
+            auto performanceNow = std::chrono::steady_clock::now();
+            // std::array<int, boardSize> nextGeneration{};
+            calculateNextGeneration(gameBoard, nextGeneration, gameGridCountY, gameGridCountX);
+            std::swap(gameBoard, nextGeneration);
+            auto performance = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - performanceNow).count();
             performanceStamps.push_back(performance);
+            // gameBoard = nextGeneration;
+            auto performanceDrawNow = std::chrono::steady_clock::now();
+            drawLife();
+            auto performanceDraw = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - performanceDrawNow).count();
+            drawStamps.push_back(performanceDraw);
+            last = now;
+            // std::cout << performance << "\n";
             generation++;
             if (generation % 100 == 0)
             {
-                float average = std::accumulate(performanceStamps.begin(), performanceStamps.end(), 0.0) / performanceStamps.size();
-                std::cout << average << "\n";
+                float averageDraw = std::accumulate(drawStamps.begin(), drawStamps.end(), 0.0) / drawStamps.size();
+                std::cout << "Draw avg: " << averageDraw << "\n";
+                drawStamps.clear();
+                
+                float averagePer = std::accumulate(performanceStamps.begin(), performanceStamps.end(), 0.0) / performanceStamps.size();
+                std::cout << "Neighbour calcs avg: " << averagePer << "\n";
                 performanceStamps.clear();
             }
         }
