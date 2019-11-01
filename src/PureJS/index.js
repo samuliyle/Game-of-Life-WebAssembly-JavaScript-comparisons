@@ -11,7 +11,6 @@ const interactionCanvas = document.getElementById('interactionCanvas');
 const iterationSlider = document.getElementById('iterationIntervalSlider');
 const gridSizeSlider = document.getElementById('gridSizeSlider');
 
-const fpsElement = document.getElementById('fps');
 const speedElement = document.getElementById('speed');
 const gridElement = document.getElementById('grid');
 const generationElement = document.getElementById('generation');
@@ -44,10 +43,52 @@ let gridCountY = Math.round(canvasHeight / gridHeight);
 let gridCountX = Math.round(canvasWidth / gridWidth);
 
 let last = null;
-let lastFrame = null;
 
 let animationRequestId;
 let generation = 0;
+
+function exportToCsv(filename, rows) {
+    const processRow = (row) => {
+        let finalVal = '';
+        for (let j = 0; j < row.length; j++) {
+            let innerValue = row[j] === null ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            }
+            let result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0) {
+                result = `"${result}"`;
+            }
+            if (j > 0) {
+                finalVal += ',';
+            }
+            finalVal += result;
+        }
+        return `${finalVal}\n`;
+    };
+
+    let csvFile = '';
+    for (let i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        const link = document.createElement('a');
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+}
 
 function createEmptyBoard() {
     const emptyBoard = [];
@@ -100,8 +141,8 @@ function initWebGL() {
 }
 
 // Initialise board
-let board = createEmptyBoard();
-board = new Int32Array(board.flat());
+let board = new Int32Array(createEmptyBoard().flat());
+let nextGeneration = new Int32Array(createEmptyBoard().flat());
 
 function setRectangle(x, y) {
     const x1 = (x * gridWidth) + 1;
@@ -184,15 +225,6 @@ function fillDebugCoordinates(x, y) {
     debugCanvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
 }
 
-function roundToPrecision(x) {
-    // eslint-disable-next-line prefer-template
-    return +(Math.round(x + 'e+2') + 'e-2');
-}
-
-function updateFps(fps) {
-    fpsElement.textContent = roundToPrecision(fps);
-}
-
 function updateGeneration(currentGeneration) {
     generationElement.textContent = currentGeneration;
 }
@@ -248,6 +280,13 @@ function stop() {
         const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
         console.log('Draw avg', average(drawTimes));
         console.log('Neighbour calcs avg', average(neighbourCalcTimes));
+        // console.log(drawTimes);
+        // console.log(neighbourCalcTimes);
+        const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
+        const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
+        // eslint-disable-next-line no-use-before-define
+        exportToCsv('purejsDrawTimes.csv', drawTimesWithIndex);
+        exportToCsv('purejsNeighbourTimes.csv', neighbourWithIndex);
         drawTimes = [];
         neighbourCalcTimes = [];
     }
@@ -279,16 +318,19 @@ function calculate1dNeighbors(i) {
 // Main loop
 export function draw(time, oneStep = false) {
     // Draw life
+    if (generation === 1000) {
+        stop();
+        return;
+    }
     animationRequestId = undefined;
-    let nextGeneration = null;
     if (last === null) {
         last = time;
-        lastFrame = time;
+        // lastFrame = time;
     }
     const progress = time - last;
     if (oneStep || (progress > step)) {
         const oneDimStart = performance.now();
-        nextGeneration = new Int32Array(gridCountY * gridCountX);
+        // nextGeneration = new Int32Array(gridCountY * gridCountX);
         for (let y = 0; y < gridCountY; y++) {
             for (let x = 0; x < gridCountX; x++) {
                 const i = x + gridCountX * y;
@@ -303,16 +345,17 @@ export function draw(time, oneStep = false) {
                 }
             }
         }
-        updateFps(1000 / (time - lastFrame));
         last = time;
+        const tmp = board;
         board = nextGeneration;
+        nextGeneration = tmp;
         generation += 1;
-        updateGeneration(generation);
+        // updateGeneration(generation);
         neighbourCalcTimes.push((performance.now() - oneDimStart));
     }
-    lastFrame = time;
+    // lastFrame = time;
     const drawStart = performance.now();
-    drawLife(nextGeneration || board);
+    drawLife(nextGeneration);
     drawTimes.push((performance.now() - drawStart));
     if (!oneStep) {
         start();
@@ -427,19 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
         gridSizeChange(event.target.value);
         gridElement.textContent = event.target.value;
     });
-    // const premadeBoardSelect = document.getElementById('premadeBoardSelect');
-    // premadeBoardSelect.addEventListener('change', (event) => {
-    //     if (event.target.value.length !== 0) {
-    //         const premadeBoard = premadeBoards[event.target.value];
-    //         if (premadeBoard) {
-    //             gridSizeSlider.value = premadeBoard.gridSize;
-    //             iterationSlider.value = premadeBoard.speed;
-    //             step = premadeBoard.speed;
-    //             board = premadeBoard.board;
-    //             gridSizeChange(premadeBoard.gridSize, false);
-    //         }
-    //     }
-    // });
 
     const nextButton = document.getElementById('nextButton');
     nextButton.addEventListener('click', () => {
@@ -461,6 +491,20 @@ document.addEventListener('DOMContentLoaded', () => {
     clearButton.addEventListener('click', () => {
         clearBoard();
     });
+
+    const midPoint = parseInt(gridCountY / 2, 10);
+    for (let y = 0; y < gridCountY; y++) {
+        for (let x = 0; x < gridCountX; x++) {
+            const i = x + gridCountX * y;
+            const xIndex = i % gridCountX;
+            const yIndex = ~~(i / gridCountX);
+            if (yIndex === midPoint) {
+                if (xIndex !== 0 && xIndex !== (gridCountX - 1)) {
+                    board[i] = 1;
+                }
+            }
+        }
+    }
 
     drawAll();
 });
