@@ -1,16 +1,14 @@
 #include <emscripten.h>
 
 #include <SDL.h>
+#include <emscripten/trace.h>
 
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL_opengles2.h>
 
 #include <vector>
-#include <iostream>
 #include <numeric>
 #include <array>
-#include <iterator>
-#include <sstream>
 
 #include <chrono>
 
@@ -51,9 +49,6 @@ std::array<int, boardSize> gameBoard{};
 std::array<int, boardSize> nextGeneration{};
 
 std::chrono::steady_clock::time_point last = std::chrono::steady_clock::now();
-
-std::vector<double> performanceStamps;
-std::vector<double> drawStamps;
 
 int generation = 0;
 const float step = 20;
@@ -176,38 +171,19 @@ extern "C"
         auto progress = std::chrono::duration_cast<std::chrono::milliseconds>(now - last).count();
         if (progress > step)
         {
-            auto t1 = std::chrono::high_resolution_clock::now();
             calculateNextGeneration(gameBoard, nextGeneration, gameGridCountY, gameGridCountX);
             std::swap(gameBoard, nextGeneration);
-            auto t2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-            performanceStamps.push_back(fp_ms.count());
-            auto t1Draw = std::chrono::high_resolution_clock::now();
             drawLife();
-            auto t2Draw = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> draw_ms = t2Draw - t1Draw;
-            drawStamps.push_back(draw_ms.count());
             last = now;
             // std::cout << performance << "\n";
-            generation++;
-            if (generation == 1000)
-            {
-                std::ostringstream oss;
-                std::copy(performanceStamps.begin(), performanceStamps.end(), std::ostream_iterator<double>(oss, ";"));
-                std::string result(oss.str());
-                std::cout << result << "\n";
-
-                std::ostringstream oss2;
-                std::copy(drawStamps.begin(), drawStamps.end(), std::ostream_iterator<double>(oss2, ";"));
-                std::string result2(oss2.str());
-                std::cout << result2 << "\n";
-
-                float averageDraw = std::accumulate(drawStamps.begin(), drawStamps.end(), 0.0) / drawStamps.size();
-                std::cout << "Draw avg: " << averageDraw << "\n";
-
-                float averagePer = std::accumulate(performanceStamps.begin(), performanceStamps.end(), 0.0) / performanceStamps.size();
-                std::cout << "Neighbour calcs avg: " << averagePer << "\n";
+            if (generation % 50 == 0) {
+                emscripten_trace_report_memory_layout();
+                emscripten_trace_report_off_heap_data();
             }
+            if (generation % 75 == 0) {
+                emscripten_trace_close();
+            }
+            generation++;
         }
     }
 
@@ -257,6 +233,7 @@ extern "C"
 
     int main()
     {
+        emscripten_trace_configure("http://127.0.0.1:5000/", "MyApplication");
         int midPoint = gameGridCountY / 2;
         for (int y = 0; y < gameGridCountY; y++)
         {

@@ -20,20 +20,7 @@ var module = adderino({
         return path;
     },
 });
-const backgroundCanvas = document.getElementById('backgroundCanvas');
 const gameCanvas = document.getElementById('gameCanvas');
-const debugCanvas = document.getElementById('debugCanvas');
-const interactionCanvas = document.getElementById('interactionCanvas');
-
-const iterationSlider = document.getElementById('iterationIntervalSlider');
-const gridSizeSlider = document.getElementById('gridSizeSlider');
-
-const speedElement = document.getElementById('speed');
-const gridElement = document.getElementById('grid');
-const generationElement = document.getElementById('generation');
-
-const backgroundCanvasContext = backgroundCanvas.getContext('2d');
-const debugCanvasContext = debugCanvas.getContext('2d');
 
 let programInfo = null;
 let buffers = null;
@@ -46,66 +33,17 @@ const offset = 0;
 const count = 6;
 let primitiveType = null;
 
-let neighbourCalcTimes = [];
-let drawTimes = [];
-let enableDebugCoordinates = true;
+const gridWidth = 2;
+const gridHeight = 2;
+const step = 20;
 
-let gridWidth = parseInt(gridSizeSlider.value, 10);
-let gridHeight = parseInt(gridSizeSlider.value, 10);
-gridElement.textContent = gridSizeSlider.value;
-let step = iterationSlider.value;
-speedElement.textContent = step;
-
-let gridCountY = Math.round(canvasHeight / gridHeight);
-let gridCountX = Math.round(canvasWidth / gridWidth);
+const gridCountY = Math.round(canvasHeight / gridHeight);
+const gridCountX = Math.round(canvasWidth / gridWidth);
 
 let last = null;
 
 let animationRequestId;
 let generation = 0;
-
-function exportToCsv(filename, rows) {
-    const processRow = (row) => {
-        let finalVal = '';
-        for (let j = 0; j < row.length; j++) {
-            let innerValue = row[j] === null ? '' : row[j].toString();
-            if (row[j] instanceof Date) {
-                innerValue = row[j].toLocaleString();
-            }
-            let result = innerValue.replace(/"/g, '""');
-            if (result.search(/("|,|\n)/g) >= 0) {
-                result = `"${result}"`;
-            }
-            if (j > 0) {
-                finalVal += ',';
-            }
-            finalVal += result;
-        }
-        return `${finalVal}\n`;
-    };
-
-    let csvFile = '';
-    for (let i = 0; i < rows.length; i++) {
-        csvFile += processRow(rows[i]);
-    }
-
-    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        const link = document.createElement('a');
-        if (link.download !== undefined) { // feature detection
-            // Browsers that support HTML5 download attribute
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-}
 
 function createEmptyBoard() {
     const emptyBoard = [];
@@ -161,21 +99,6 @@ function initWebGL() {
 let board = new Int32Array(createEmptyBoard().flat());
 const bytesPerElement = board.BYTES_PER_ELEMENT;
 
-function setRectangle(x, y) {
-    const x1 = (x * gridWidth) + 1;
-    const x2 = (x * gridWidth) + gridWidth;
-    const y1 = (y * gridHeight) + 1;
-    const y2 = (y * gridHeight) + gridHeight;
-
-    gameCanvasContext.bufferData(gameCanvasContext.ARRAY_BUFFER, new Float32Array([
-        x1, y1,
-        x2, y1,
-        x1, y2,
-        x1, y2,
-        x2, y1,
-        x2, y2]), gameCanvasContext.STATIC_DRAW);
-}
-
 function setRect(x, y, arr) {
     const x1 = (x * gridWidth) + 1;
     const x2 = (x * gridWidth) + gridWidth;
@@ -202,54 +125,6 @@ function drawScene(rectCount = count) {
     );
 
     gameCanvasContext.drawArrays(primitiveType, offset, rectCount);
-}
-
-function clearGridRect(x, y) {
-    // TODO: Fix
-    // turn on the scissor test.
-    gameCanvasContext.enable(gameCanvasContext.SCISSOR_TEST);
-
-    const x1 = (x * gridWidth) + 1;
-    const x2 = (x * gridWidth) + gridWidth;
-    const y1 = (y * gridHeight) + 1;
-    const y2 = (y * gridHeight) + gridHeight;
-
-    // set the scissor rectangle.
-    gameCanvasContext.scissor(x1, y1, x2, y2);
-
-    // clear.
-    gameCanvasContext.clearColor(0, 0.0, 0.0, 0);
-    gameCanvasContext.clearDepth(1.0); // Clear everything
-    gameCanvasContext.clear(gameCanvasContext.COLOR_BUFFER_BIT | gameCanvasContext.DEPTH_BUFFER_BIT);
-
-    // turn off the scissor test so you can render like normal again.
-    gameCanvasContext.disable(gameCanvasContext.SCISSOR_TEST);
-}
-
-function drawGridRect(x, y) {
-    setRectangle(x, y);
-    drawScene();
-}
-
-function fillDebugCoordinates(x, y) {
-    debugCanvasContext.fillText(`${y},${x}`, (x * gridWidth) + (gridWidth / 2), (y * gridHeight) + (gridHeight / 2));
-}
-
-function updateGeneration(currentGeneration) {
-    generationElement.textContent = currentGeneration;
-}
-
-function clearDebugCoordinates() {
-    debugCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-}
-
-function drawDebugCoordinates() {
-    debugCanvasContext.font = `${Math.floor(gridHeight / 3)}px Arial`;
-    for (let y = 0; y < gridCountY; y++) {
-        for (let x = 0; x < gridCountX; x++) {
-            fillDebugCoordinates(x, y);
-        }
-    }
 }
 
 function clearLife() {
@@ -286,31 +161,11 @@ function stop() {
     if (animationRequestId) {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
-        const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-        console.log('Draw avg', average(drawTimes));
-        console.log('Neighbour calcs avg', average(neighbourCalcTimes));
-        // console.log(drawTimes);
-        // console.log(neighbourCalcTimes);
-        const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
-        const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
-        // eslint-disable-next-line no-use-before-define
-        exportToCsv('jswasmDrawTimes.csv', drawTimesWithIndex);
-        exportToCsv('jswasmNeighbourTimes.csv', neighbourWithIndex);
-        drawTimes = [];
-        neighbourCalcTimes = [];
     }
 }
 
-function clearBoard() {
-    stop();
-    generation = 0;
-    updateGeneration(generation);
-    clearLife();
-    board.fill(0);
-}
-
 // Main loop
-export function draw(time, oneStep = false) {
+export function draw(time) {
     if (generation === 1000) {
         stop();
         return;
@@ -322,10 +177,8 @@ export function draw(time, oneStep = false) {
         last = time;
     }
     const progress = time - last;
-    if (oneStep || (progress > step)) {
-        const oneDimStart = performance.now();
+    if (progress > step) {
         const len = board.length;
-
         const inputPtr = module._malloc(len * bytesPerElement);
         const outputPtr = module._malloc(len * bytesPerElement);
 
@@ -339,146 +192,17 @@ export function draw(time, oneStep = false) {
         last = time;
         board = nextGeneration;
         generation += 1;
-        // updateGeneration(generation);
-        neighbourCalcTimes.push((performance.now() - oneDimStart));
+        if (generation % 200 === 0) {
+            console.log(`${generation}: snap`);
+        }
     }
-    const drawStart = performance.now();
     drawLife(nextGeneration || board);
-    drawTimes.push((performance.now() - drawStart));
-    if (!oneStep) {
-        start();
-    }
-}
-
-function addOrRemoveLife(x, y) {
-    const i = x + gridCountX * y;
-    if (board[i] === 0) {
-        board[i] = 1;
-        drawGridRect(x, y);
-    } else {
-        board[i] = 0;
-        clearGridRect(x, y);
-    }
-}
-
-function clearGrid() {
-    backgroundCanvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-}
-
-function drawGrid() {
-    for (let i = 1; i < gridCountY; i++) {
-        backgroundCanvasContext.beginPath();
-        backgroundCanvasContext.rect(0, i * gridHeight, canvasWidth, 1);
-        backgroundCanvasContext.fill();
-        backgroundCanvasContext.closePath();
-    }
-    for (let i = 1; i < gridCountX; i++) {
-        backgroundCanvasContext.beginPath();
-        backgroundCanvasContext.rect(i * gridWidth, 0, 1, canvasHeight);
-        backgroundCanvasContext.fill();
-        backgroundCanvasContext.closePath();
-    }
-}
-
-function clearAll() {
-    clearGrid();
-    clearLife();
-    if (enableDebugCoordinates) {
-        clearDebugCoordinates();
-    }
-}
-
-function drawAll() {
-    drawGrid();
-    drawLife();
-    if (enableDebugCoordinates) {
-        drawDebugCoordinates();
-    }
-}
-
-function gridSizeChange(value, keepBoard = true) {
-    gridWidth = parseInt(value, 10);
-    gridHeight = parseInt(value, 10);
-    gridCountY = Math.round(canvasHeight / gridHeight);
-    gridCountX = Math.round(canvasWidth / gridWidth);
-    clearAll();
-    if (keepBoard) {
-        board = new Int32Array(createEmptyBoard().flat());
-    }
-    drawAll();
+    start();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     gameCanvasContext = gameCanvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (gameCanvasContext === null) {
-        console.error('WebGL not supported');
-    } else {
-        initWebGL();
-    }
-
-    backgroundCanvasContext.fillStyle = 'grey';
-    debugCanvasContext.fillStyle = 'red';
-    debugCanvasContext.textAlign = 'center';
-
-    interactionCanvas.addEventListener('click', (event) => {
-        if (generation === 0) {
-            // Calculate grid coordinates from clicked x, y coordinates
-            const rect = interactionCanvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            const gridX = Math.floor(x / gridWidth);
-            const gridY = Math.floor(y / gridHeight);
-            if (event.shiftKey) {
-                for (let i = 0; i < gridCountX; i++) {
-                    addOrRemoveLife(i, gridY);
-                }
-            } else {
-                addOrRemoveLife(gridX, gridY);
-            }
-        }
-    });
-
-    const debugCoordinatesCheckbox = document.getElementById('debugCoordinates');
-    enableDebugCoordinates = debugCoordinatesCheckbox.checked;
-    debugCoordinatesCheckbox.addEventListener('change', (event) => {
-        enableDebugCoordinates = event.target.checked;
-        if (enableDebugCoordinates) {
-            drawDebugCoordinates();
-        } else {
-            clearDebugCoordinates();
-        }
-    });
-
-    iterationSlider.addEventListener('input', (event) => {
-        step = event.target.value;
-        speedElement.textContent = step;
-    });
-
-    gridSizeSlider.addEventListener('input', (event) => {
-        gridSizeChange(event.target.value);
-        gridElement.textContent = event.target.value;
-    });
-
-    const nextButton = document.getElementById('nextButton');
-    nextButton.addEventListener('click', () => {
-        draw(performance.now(), true);
-    });
-
-    const startStopButton = document.getElementById('startStopButton');
-    startStopButton.addEventListener('click', () => {
-        if (animationRequestId) {
-            stop();
-            startStopButton.textContent = 'Start';
-        } else {
-            start();
-            startStopButton.textContent = 'Stop';
-        }
-    });
-
-    const clearButton = document.getElementById('clearButton');
-    clearButton.addEventListener('click', () => {
-        clearBoard();
-    });
+    initWebGL();
 
     const midPoint = parseInt(gridCountY / 2, 10);
     for (let y = 0; y < gridCountY; y++) {
@@ -494,5 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    drawAll();
+    drawLife();
+    setTimeout(start, 2000);
 });

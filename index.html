@@ -8,43 +8,7 @@
 
 <body>
     <div id="stage">
-        <canvas width="1440" height="960" id="backgroundCanvas"></canvas>
         <canvas width="1440" height="960" id="gameCanvas"></canvas>
-        <canvas width="1440" height="960" id="debugCanvas"></canvas>
-        <canvas width="1440" height="960" id="interactionCanvas"></canvas>
-    </div>
-    <div id="toolbar">
-        <div>
-            <span>FPS: </span><span id="fps">0</span>
-        </div>
-        <div>
-            <span>Generation: </span>
-            <span id="generation">0</span>
-        </div>
-        <div>
-            <input type="checkbox" id="debugCoordinates" name="debugCoordinates" value="debugCoordinates">
-            <label for="debugCoordinates">Debug coordinates</label>
-        </div>
-        <div>
-            <button id="nextButton">Next</button>
-            <button id="startStopButton">Start</button>
-            <button id="clearButton">Clear</button>
-        </div>
-        <div class="sliderContainer">
-            <label>
-                <span>Speed </span>
-                <span id="speed"></span>
-                <span>:</span>
-            </label>
-            <input type="range" min="20" step="20" max="2000" value="20" id="iterationIntervalSlider">
-        </div>
-        <div class="sliderContainer">
-            <span>Grid </span>
-            <span id="grid"></span>
-            <span>:</span>
-            <input type="range" min="2" max="50" step="2" value="2" id="gridSizeSlider">
-        </div>
     </div>
 </body>
-
 </html>
