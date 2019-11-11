@@ -11,8 +11,6 @@ import addModule from '../life.wasm';
 // `.wasm` file, we have to provide a `locateFile()` hook to redirect
 // to the appropriate URL.
 // More details: https://kripken.github.io/emscripten-site/docs/api_reference/module.html
-const startnow = performance.now();
-
 // eslint-disable-next-line no-var
 var module = adderino({
     locateFile(path) {
@@ -20,9 +18,6 @@ var module = adderino({
             return addModule;
         }
         return path;
-    },
-    onRuntimeInitialized: () => {
-        console.log(performance.now() - startnow);
     },
 });
 const backgroundCanvas = document.getElementById('backgroundCanvas');
