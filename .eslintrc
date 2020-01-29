@@ -1,0 +1,33 @@
+{
+    "env": {
+        "browser": true
+    },
+    "extends": [
+        "airbnb"
+    ],
+    "rules": {
+        "import/no-extraneous-dependencies": 
+            ["error", 
+            { "devDependencies": true }],
+        "indent": [
+            "error",
+            4
+        ],
+        "max-len": [
+            "error",
+            {
+                "code": 130
+            }
+        ],
+        "no-mixed-operators": 0,
+        "no-bitwise": 0,
+        "no-underscore-dangle": 0,
+        "linebreak-style": 0,
+        "no-plusplus": [
+            "error",
+            {
+                "allowForLoopAfterthoughts": true
+            }
+        ]
+    }
+}

@@ -5,39 +5,52 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
     mode: 'development',
     entry: {
-        app: './src/index.js'
+        app: './src/index.js',
     },
     devtool: 'inline-source-map',
     devServer: {
-        contentBase: './dist'
+        contentBase: './dist',
     },
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            title: "Output management",
+            title: 'Output management',
             filename: 'index.html',
-            template: 'index.html'
-        })
+            template: 'index.html',
+        }),
     ],
     output: {
         filename: '[name].bundle.js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, 'dist'),
+    },
+    node: {
+        fs: 'empty',
     },
     module: {
         rules: [
             {
+                test: /\.(js)$/,
+                exclude: /node_modules/,
+                use: ['eslint-loader'],
+            },
+            {
                 test: /\.css$/,
                 use: [
                     'style-loader',
-                    'css-loader'
-                ]
+                    'css-loader',
+                ],
             },
+            // {
+            //     test: /\.(png|svg|jpg|gif)$/,
+            //     use: [
+            //         'file-loader',
+            //     ],
+            // },
             {
-                test: /\.(png|svg|jpg|gif)$/,
-                use: [
-                    'file-loader'
-                ]
-            }
-        ]
-    }
+                test: /add\.wasm$/,
+                type: 'javascript/auto',
+                loader: 'file-loader',
+            },
+        ],
+    },
 };

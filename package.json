@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "start": "webpack-dev-server --open"
+    "build": "webpack --config ./webpack.config.js",
+    "start": "webpack-dev-server --open --config ./webpack.config.js",
+    "buildPureJS": "SET NODE_ENV=production & webpack --progress --config ./webpack.prod.config.purejs.js",
+    "startPureJS": "webpack-dev-server --open --config ./webpack.config.purejs.js",
+    "buildJSWasm": "SET NODE_ENV=production & webpack --config ./webpack.prod.config.jswasm.js",
+    "startJSWasm": "webpack-dev-server --open --config ./webpack.config.jswasm.js"
   },
   "repository": {
     "type": "git",
@@ -23,10 +27,20 @@
   "devDependencies": {
     "clean-webpack-plugin": "^3.0.0",
     "css-loader": "^3.2.0",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-loader": "^3.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^1.7.0",
+    "express": "^4.17.1",
     "file-loader": "^4.2.0",
     "html-webpack-plugin": "^3.2.0",
     "style-loader": "^1.0.0",
+    "terser-webpack-plugin": "^2.2.1",
     "webpack-cli": "^3.3.8",
-    "webpack-dev-server": "^3.8.0"
+    "webpack-dev-server": "^3.8.0",
+    "webpack-merge": "^4.2.2"
   }
 }
