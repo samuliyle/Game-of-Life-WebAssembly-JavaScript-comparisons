@@ -103,5 +103,7 @@
         "__tuple": "cpp",
         "bit": "cpp",
         "string_view": "cpp"
-    }
+    },
+    "eslint.enable": true,
+    "typescript.validate.enable": false
 }

@@ -51,9 +51,9 @@ const offset = 0;
 const count = 6;
 let primitiveType = null;
 
-let neighbourCalcTimes = [];
-let drawTimes = [];
-let drawTimes2 = [];
+// let neighbourCalcTimes = [];
+// let drawTimes = [];
+// let drawTimes2 = [];
 let enableDebugCoordinates = true;
 
 let gridWidth = parseInt(gridSizeSlider.value, 10);
@@ -70,48 +70,48 @@ let last = null;
 let animationRequestId;
 let generation = 0;
 
-function exportToCsv(filename, rows) {
-    const processRow = (row) => {
-        let finalVal = '';
-        for (let j = 0; j < row.length; j++) {
-            let innerValue = row[j] === null ? '' : row[j].toString();
-            if (row[j] instanceof Date) {
-                innerValue = row[j].toLocaleString();
-            }
-            let result = innerValue.replace(/"/g, '""');
-            if (result.search(/("|,|\n)/g) >= 0) {
-                result = `"${result}"`;
-            }
-            if (j > 0) {
-                finalVal += ',';
-            }
-            finalVal += result;
-        }
-        return `${finalVal}\n`;
-    };
+// function exportToCsv(filename, rows) {
+//     const processRow = (row) => {
+//         let finalVal = '';
+//         for (let j = 0; j < row.length; j++) {
+//             let innerValue = row[j] === null ? '' : row[j].toString();
+//             if (row[j] instanceof Date) {
+//                 innerValue = row[j].toLocaleString();
+//             }
+//             let result = innerValue.replace(/"/g, '""');
+//             if (result.search(/("|,|\n)/g) >= 0) {
+//                 result = `"${result}"`;
+//             }
+//             if (j > 0) {
+//                 finalVal += ',';
+//             }
+//             finalVal += result;
+//         }
+//         return `${finalVal}\n`;
+//     };
 
-    let csvFile = '';
-    for (let i = 0; i < rows.length; i++) {
-        csvFile += processRow(rows[i]);
-    }
+//     let csvFile = '';
+//     for (let i = 0; i < rows.length; i++) {
+//         csvFile += processRow(rows[i]);
+//     }
 
-    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        const link = document.createElement('a');
-        if (link.download !== undefined) { // feature detection
-            // Browsers that support HTML5 download attribute
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-}
+//     const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+//     if (navigator.msSaveBlob) { // IE 10+
+//         navigator.msSaveBlob(blob, filename);
+//     } else {
+//         const link = document.createElement('a');
+//         if (link.download !== undefined) { // feature detection
+//             // Browsers that support HTML5 download attribute
+//             const url = URL.createObjectURL(blob);
+//             link.setAttribute('href', url);
+//             link.setAttribute('download', filename);
+//             link.style.visibility = 'hidden';
+//             document.body.appendChild(link);
+//             link.click();
+//             document.body.removeChild(link);
+//         }
+//     }
+// }
 
 function createEmptyBoard() {
     const emptyBoard = [];
@@ -265,7 +265,7 @@ function clearLife() {
 }
 
 export function drawLife(state = board) {
-    const drawStart = performance.now();
+    // const drawStart = performance.now();
     clearLife();
     const rects = [];
     for (let y = 0; y < gridCountY; y++) {
@@ -277,7 +277,7 @@ export function drawLife(state = board) {
             }
         }
     }
-    drawTimes2.push(performance.now() - drawStart);
+    // drawTimes2.push(performance.now() - drawStart);
     gameCanvasContext.bufferData(
         gameCanvasContext.ARRAY_BUFFER, new Float32Array(rects), gameCanvasContext.STATIC_DRAW,
     );
@@ -294,20 +294,20 @@ function stop() {
     if (animationRequestId) {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
-        const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-        console.log('Draw avg', average(drawTimes));
-        console.log('Draw2 avg', average(drawTimes2));
-        console.log('Neighbour calcs avg', average(neighbourCalcTimes));
-        // console.log(drawTimes);
-        // console.log(neighbourCalcTimes);
-        const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
-        const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
-        // eslint-disable-next-line no-use-before-define
-        exportToCsv('jswasmDrawTimes.csv', drawTimesWithIndex);
-        exportToCsv('jswasmNeighbourTimes.csv', neighbourWithIndex);
-        drawTimes = [];
-        drawTimes2 = [];
-        neighbourCalcTimes = [];
+        // const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
+        // console.log('Draw avg', average(drawTimes));
+        // console.log('Draw2 avg', average(drawTimes2));
+        // console.log('Neighbour calcs avg', average(neighbourCalcTimes));
+        // // console.log(drawTimes);
+        // // console.log(neighbourCalcTimes);
+        // const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
+        // const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
+        // // eslint-disable-next-line no-use-before-define
+        // exportToCsv('jswasmDrawTimes.csv', drawTimesWithIndex);
+        // exportToCsv('jswasmNeighbourTimes.csv', neighbourWithIndex);
+        // drawTimes = [];
+        // drawTimes2 = [];
+        // neighbourCalcTimes = [];
     }
 }
 
@@ -333,7 +333,7 @@ export function draw(time, oneStep = false) {
     }
     const progress = time - last;
     if (oneStep || (progress > step)) {
-        const oneDimStart = performance.now();
+        // const oneDimStart = performance.now();
         const len = board.length;
 
         const inputPtr = module._malloc(len * bytesPerElement);
@@ -350,11 +350,11 @@ export function draw(time, oneStep = false) {
         board = nextGeneration;
         generation += 1;
         // updateGeneration(generation);
-        neighbourCalcTimes.push((performance.now() - oneDimStart));
+        // neighbourCalcTimes.push((performance.now() - oneDimStart));
     }
-    const drawStart = performance.now();
+    // const drawStart = performance.now();
     drawLife(nextGeneration || board);
-    drawTimes.push((performance.now() - drawStart));
+    // drawTimes.push((performance.now() - drawStart));
     if (!oneStep) {
         start();
     }

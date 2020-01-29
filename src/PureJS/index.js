@@ -29,8 +29,8 @@ const offset = 0;
 const count = 6;
 let primitiveType = null;
 
-let neighbourCalcTimes = [];
-let drawTimes = [];
+// let neighbourCalcTimes = [];
+// let drawTimes = [];
 let enableDebugCoordinates = true;
 
 let gridWidth = parseInt(gridSizeSlider.value, 10);
@@ -47,48 +47,48 @@ let last = null;
 let animationRequestId;
 let generation = 0;
 
-function exportToCsv(filename, rows) {
-    const processRow = (row) => {
-        let finalVal = '';
-        for (let j = 0; j < row.length; j++) {
-            let innerValue = row[j] === null ? '' : row[j].toString();
-            if (row[j] instanceof Date) {
-                innerValue = row[j].toLocaleString();
-            }
-            let result = innerValue.replace(/"/g, '""');
-            if (result.search(/("|,|\n)/g) >= 0) {
-                result = `"${result}"`;
-            }
-            if (j > 0) {
-                finalVal += ',';
-            }
-            finalVal += result;
-        }
-        return `${finalVal}\n`;
-    };
+// function exportToCsv(filename, rows) {
+//     const processRow = (row) => {
+//         let finalVal = '';
+//         for (let j = 0; j < row.length; j++) {
+//             let innerValue = row[j] === null ? '' : row[j].toString();
+//             if (row[j] instanceof Date) {
+//                 innerValue = row[j].toLocaleString();
+//             }
+//             let result = innerValue.replace(/"/g, '""');
+//             if (result.search(/("|,|\n)/g) >= 0) {
+//                 result = `"${result}"`;
+//             }
+//             if (j > 0) {
+//                 finalVal += ',';
+//             }
+//             finalVal += result;
+//         }
+//         return `${finalVal}\n`;
+//     };
 
-    let csvFile = '';
-    for (let i = 0; i < rows.length; i++) {
-        csvFile += processRow(rows[i]);
-    }
+//     let csvFile = '';
+//     for (let i = 0; i < rows.length; i++) {
+//         csvFile += processRow(rows[i]);
+//     }
 
-    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
-    if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename);
-    } else {
-        const link = document.createElement('a');
-        if (link.download !== undefined) { // feature detection
-            // Browsers that support HTML5 download attribute
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-}
+//     const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+//     if (navigator.msSaveBlob) { // IE 10+
+//         navigator.msSaveBlob(blob, filename);
+//     } else {
+//         const link = document.createElement('a');
+//         if (link.download !== undefined) { // feature detection
+//             // Browsers that support HTML5 download attribute
+//             const url = URL.createObjectURL(blob);
+//             link.setAttribute('href', url);
+//             link.setAttribute('download', filename);
+//             link.style.visibility = 'hidden';
+//             document.body.appendChild(link);
+//             link.click();
+//             document.body.removeChild(link);
+//         }
+//     }
+// }
 
 function createEmptyBoard() {
     const emptyBoard = [];
@@ -277,18 +277,18 @@ function stop() {
     if (animationRequestId) {
         window.cancelAnimationFrame(animationRequestId);
         animationRequestId = undefined;
-        const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-        console.log('Draw avg', average(drawTimes));
-        console.log('Neighbour calcs avg', average(neighbourCalcTimes));
-        // console.log(drawTimes);
-        // console.log(neighbourCalcTimes);
-        const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
-        const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
-        // eslint-disable-next-line no-use-before-define
-        exportToCsv('purejsDrawTimes.csv', drawTimesWithIndex);
-        exportToCsv('purejsNeighbourTimes.csv', neighbourWithIndex);
-        drawTimes = [];
-        neighbourCalcTimes = [];
+        // const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
+        // console.log('Draw avg', average(drawTimes));
+        // console.log('Neighbour calcs avg', average(neighbourCalcTimes));
+        // // console.log(drawTimes);
+        // // console.log(neighbourCalcTimes);
+        // const drawTimesWithIndex = drawTimes.map((value, index) => [index + 1, value]);
+        // const neighbourWithIndex = neighbourCalcTimes.map((value, index) => [index + 1, value]);
+        // // eslint-disable-next-line no-use-before-define
+        // exportToCsv('purejsDrawTimes.csv', drawTimesWithIndex);
+        // exportToCsv('purejsNeighbourTimes.csv', neighbourWithIndex);
+        // drawTimes = [];
+        // neighbourCalcTimes = [];
     }
 }
 
@@ -329,7 +329,7 @@ export function draw(time, oneStep = false) {
     }
     const progress = time - last;
     if (oneStep || (progress > step)) {
-        const oneDimStart = performance.now();
+        // const oneDimStart = performance.now();
         // nextGeneration = new Int32Array(gridCountY * gridCountX);
         for (let y = 0; y < gridCountY; y++) {
             for (let x = 0; x < gridCountX; x++) {
@@ -351,12 +351,12 @@ export function draw(time, oneStep = false) {
         nextGeneration = tmp;
         generation += 1;
         // updateGeneration(generation);
-        neighbourCalcTimes.push((performance.now() - oneDimStart));
+        // neighbourCalcTimes.push((performance.now() - oneDimStart));
     }
     // lastFrame = time;
-    const drawStart = performance.now();
+    // const drawStart = performance.now();
     drawLife(nextGeneration);
-    drawTimes.push((performance.now() - drawStart));
+    // drawTimes.push((performance.now() - drawStart));
     if (!oneStep) {
         start();
     }
